@@ -159,14 +159,22 @@ public class MockCatalogReader implements Prepare.CatalogReader {
         typeFactory.createTypeWithNullability(intType, true);
     final RelDataType varchar10Type =
         typeFactory.createSqlType(SqlTypeName.VARCHAR, 10);
+    final RelDataType varchar10TypeNull =
+        typeFactory.createTypeWithNullability(varchar10Type, true);
     final RelDataType varchar20Type =
         typeFactory.createSqlType(SqlTypeName.VARCHAR, 20);
+    final RelDataType varchar20TypeNull =
+        typeFactory.createTypeWithNullability(varchar20Type, true);
     final RelDataType timestampType =
         typeFactory.createSqlType(SqlTypeName.TIMESTAMP);
+    final RelDataType timestampTypeNull =
+        typeFactory.createTypeWithNullability(timestampType, true);
     final RelDataType dateType =
         typeFactory.createSqlType(SqlTypeName.DATE);
     final RelDataType booleanType =
         typeFactory.createSqlType(SqlTypeName.BOOLEAN);
+    final RelDataType booleanTypeNull =
+        typeFactory.createTypeWithNullability(booleanType, true);
     final RelDataType rectilinearCoordType =
         typeFactory.builder()
             .add("X", intType)
@@ -216,6 +224,19 @@ public class MockCatalogReader implements Prepare.CatalogReader {
     empTable.addColumn("DEPTNO", intType);
     empTable.addColumn("SLACKER", booleanType);
     registerTable(empTable);
+
+    // Register "EMPNULLABLES" table with nullable columns.
+    final MockTable empNullablesTable =
+        MockTable.create(this, salesSchema, "EMPNULLABLES", false, 14);
+    empNullablesTable.addColumn("EMPNO", intType, true);
+    empNullablesTable.addColumn("ENAME", varchar20Type);
+    empNullablesTable.addColumn("JOB", varchar10TypeNull);
+    empNullablesTable.addColumn("MGR", intTypeNull);
+    empNullablesTable.addColumn("HIREDATE", timestampTypeNull);
+    empNullablesTable.addColumn("SAL", intTypeNull);
+    empNullablesTable.addColumn("COMM", intTypeNull);
+    empNullablesTable.addColumn("DEPTNO", intTypeNull);
+    registerTable(empNullablesTable);
 
     // Register "EMP_B" table. As "EMP", birth with a "BIRTHDATE" column.
     final MockTable empBTable =
@@ -414,6 +435,24 @@ public class MockCatalogReader implements Prepare.CatalogReader {
       structTypeTable.addColumn(column.getName(), column.type);
     }
     registerTable(structTypeTable);
+
+    final List<CompoundNameColumn> columnsNullable = Arrays.asList(
+        new CompoundNameColumn("", "K0", varchar20TypeNull),
+        new CompoundNameColumn("", "C1", varchar20TypeNull),
+        new CompoundNameColumn("F1", "A0", intTypeNull),
+        new CompoundNameColumn("F2", "A0", booleanTypeNull),
+        new CompoundNameColumn("F0", "C0", intTypeNull),
+        new CompoundNameColumn("F1", "C0", intTypeNull),
+        new CompoundNameColumn("F0", "C1", intTypeNull),
+        new CompoundNameColumn("F1", "C2", intType),
+        new CompoundNameColumn("F2", "C3", intTypeNull));
+    final MockTable structNullableTypeTable = new MockTable(this,
+        structTypeSchema.getCatalogName(), structTypeSchema.name,
+        "T_NULLABLES", false, 100, structTypeTableResolver);
+    for (CompoundNameColumn column : columnsNullable) {
+      structNullableTypeTable.addColumn(column.getName(), column.type);
+    }
+    registerTable(structNullableTypeTable);
 
     // Register "STRUCT.T_10" view.
     // Same columns as "STRUCT.T",

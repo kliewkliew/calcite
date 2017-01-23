@@ -303,7 +303,7 @@ public class SqlToRelConverter {
             : validator.getOperatorTable();
     this.validator = validator;
     this.catalogReader = catalogReader;
-    this.defaultValueFactory = new NullDefaultValueFactory();
+    this.defaultValueFactory = validator.getDefaultValueFactory();
     this.subQueryConverter = new NoOpSubQueryConverter();
     this.rexBuilder = cluster.getRexBuilder();
     this.typeFactory = rexBuilder.getTypeFactory();
@@ -3122,7 +3122,7 @@ public class SqlToRelConverter {
     final RelDataType targetRowType = targetTable.getRowType();
     SqlNodeList targetColumnList = call.getTargetColumnList();
     if (targetColumnList == null) {
-      targetColumnNames.addAll(targetRowType.getFieldNames());
+      targetColumnNames.addAll(sourceRef.getType().getFieldNames());
     } else {
       for (int i = 0; i < targetColumnList.size(); i++) {
         SqlIdentifier id = (SqlIdentifier) targetColumnList.get(i);
@@ -4323,31 +4323,6 @@ public class SqlToRelConverter {
 
     public String getOriginalRelName() {
       return originalRelName;
-    }
-  }
-
-  /**
-   * An implementation of DefaultValueFactory which always supplies NULL.
-   */
-  class NullDefaultValueFactory implements DefaultValueFactory {
-    public boolean isGeneratedAlways(
-        RelOptTable table,
-        int iColumn) {
-      return false;
-    }
-
-    public RexNode newColumnDefaultValue(
-        RelOptTable table,
-        int iColumn) {
-      return rexBuilder.constantNull();
-    }
-
-    public RexNode newAttributeInitializer(
-        RelDataType type,
-        SqlFunction constructor,
-        int iAttribute,
-        List<RexNode> constructorArgs) {
-      return rexBuilder.constantNull();
     }
   }
 

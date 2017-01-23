@@ -76,6 +76,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql2rel.DefaultValueFactory;
+import org.apache.calcite.sql2rel.NullDefaultValueFactory;
 import org.apache.calcite.util.BitString;
 import org.apache.calcite.util.ImmutableNullableList;
 import org.apache.calcite.util.Litmus;
@@ -108,6 +110,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -252,6 +255,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private boolean inWindow;                        // Allow nested aggregates
 
+  private DefaultValueFactory defaultValueFactory;
+  private DefaultValueFactory nullDefaultValueFactory;
+
   //~ Constructors -----------------------------------------------------------
 
   /**
@@ -266,10 +272,13 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
+      DefaultValueFactory defaultValueFactory,
       SqlConformance conformance) {
     this.opTab = Preconditions.checkNotNull(opTab);
     this.catalogReader = Preconditions.checkNotNull(catalogReader);
     this.typeFactory = Preconditions.checkNotNull(typeFactory);
+    this.defaultValueFactory = defaultValueFactory;
+    this.nullDefaultValueFactory = new NullDefaultValueFactory(typeFactory);
     this.conformance = Preconditions.checkNotNull(conformance);
 
     // NOTE jvs 23-Dec-2003:  This is used as the type for dynamic
@@ -3688,6 +3697,18 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   }
 
   /**
+   * Derives a row-type for INSERT and UPDATE operations that implicitly specify the column-set.
+   *
+   * @param targetRowType       Target row type of for INSERT/UPDATE
+   * @param implicitColumnCount The source column count
+   * @return Rowtype
+   */
+  protected RelDataType createImplicitSubsetTargetRowType(
+      RelDataType targetRowType,
+      int implicitColumnCount) {
+    return new RelRecordType(targetRowType.getFieldList().subList(0, implicitColumnCount));
+  }
+  /**
    * Derives a row-type for INSERT and UPDATE operations.
    *
    * @param table            Target table for INSERT/UPDATE
@@ -3769,7 +3790,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     RelDataType logicalSourceRowType =
         getLogicalSourceRowType(sourceRowType, insert);
 
-    checkFieldCount(insert, logicalSourceRowType, logicalTargetRowType);
+    checkFieldCount(insert, table, logicalSourceRowType, logicalTargetRowType);
 
     checkTypeAssignment(logicalSourceRowType, logicalTargetRowType, insert);
 
@@ -3778,20 +3799,66 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private void checkFieldCount(
       SqlNode node,
+      SqlValidatorTable table,
       RelDataType logicalSourceRowType,
       RelDataType logicalTargetRowType) {
     final int sourceFieldCount = logicalSourceRowType.getFieldCount();
-    final int targetFieldCount = logicalTargetRowType.getFieldCount();
-    if (sourceFieldCount != targetFieldCount) {
-      throw newValidationError(node,
-          RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
+    if (conformance.isInsertSubsetColumnsAllowed()) {
+      final int targetFieldCount = logicalTargetRowType.getFieldCount();
+      if (sourceFieldCount > targetFieldCount) {
+        throw newValidationError(node,
+            RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
+      }
+
+      Iterator<RelDataTypeField> allFields = table.getRowType().getFieldList().iterator();
+      while (allFields.hasNext()) {
+        RelDataTypeField nextTargetType = allFields.next();
+        if (!nextTargetType.getType().isNullable()) {
+          final boolean fieldIsInSubset =
+              null != logicalTargetRowType.getField(
+                  nextTargetType.getName(),
+                  true,
+                  false);
+          final boolean defaultIsNull =
+              nullDefaultValueFactory.newColumnDefaultValue(
+                  (RelOptTable) table,
+                  nextTargetType.getIndex()).equals(
+                  defaultValueFactory.newColumnDefaultValue(
+                      (RelOptTable) table,
+                      nextTargetType.getIndex()));
+          if (!fieldIsInSubset && defaultIsNull) {
+            throw newValidationError(node,
+                RESOURCE.columnNotNullable(nextTargetType.getName()));
+          }
+        }
+      }
+    } else {
+      final int targetFieldCount = table.getRowType().getFieldCount();
+      if (sourceFieldCount != targetFieldCount) {
+        throw newValidationError(node,
+            RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
+      }
     }
   }
 
   protected RelDataType getLogicalTargetRowType(
       RelDataType targetRowType,
       SqlInsert insert) {
-    return targetRowType;
+    if (conformance.isInsertSubsetColumnsAllowed() && null == insert.getTargetColumnList()) {
+      // Target an implicit subset of columns.
+      SqlNode source = insert.getSource();
+      RelDataType sourceRowType = getNamespace(source).getRowType();
+      RelDataType logicalSourceRowType =
+          getLogicalSourceRowType(sourceRowType, insert);
+      targetRowType =
+          createImplicitSubsetTargetRowType(targetRowType, logicalSourceRowType.getFieldCount());
+      SqlValidatorNamespace targetNamespace = getNamespace(insert);
+      validateNamespace(targetNamespace, targetRowType);
+      return targetRowType;
+    } else {
+      // Either the set of columns are explicitly targeted, or target the full set of columns.
+      return targetRowType;
+    }
   }
 
   protected RelDataType getLogicalSourceRowType(
@@ -4341,6 +4408,10 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       List<RelDataType> argTypes,
       List<SqlNode> operands) {
     throw new UnsupportedOperationException();
+  }
+
+  public DefaultValueFactory getDefaultValueFactory() {
+    return defaultValueFactory;
   }
 
   //~ Inner Classes ----------------------------------------------------------
