@@ -158,6 +158,14 @@ public interface SqlConformance {
    * false otherwise.
    */
   boolean isApplyAllowed();
+
+  /**
+   * Whether @{code INSERT} is allowed with a subset of columns that exist
+   * in the target table.
+   * TODO: complete the docs
+   * @return
+   */
+  boolean isInsertSubsetColumnsAllowed();
 }
 
 // End SqlConformance.java

@@ -37,6 +37,8 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeUtil;
+import org.apache.calcite.sql2rel.DefaultValueFactory;
+import org.apache.calcite.sql2rel.NullDefaultValueFactory;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.Pair;
 
@@ -407,6 +409,10 @@ public final class Schemas {
 
       public DataContext getDataContext() {
         return dataContext;
+      }
+
+      public DefaultValueFactory getDefaultValueFactory() {
+        return new NullDefaultValueFactory(typeFactory);
       }
 
       public CalcitePrepare.SparkHandler spark() {

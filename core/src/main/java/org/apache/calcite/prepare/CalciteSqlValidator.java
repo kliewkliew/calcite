@@ -22,23 +22,26 @@ import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
+import org.apache.calcite.sql2rel.DefaultValueFactory;
 
 /** Validator. */
 class CalciteSqlValidator extends SqlValidatorImpl {
   public CalciteSqlValidator(SqlOperatorTable opTab,
       CalciteCatalogReader catalogReader, JavaTypeFactory typeFactory,
-      SqlConformance conformance) {
-    super(opTab, catalogReader, typeFactory, conformance);
+      DefaultValueFactory defaultValueFactory, SqlConformance conformance) {
+    super(opTab, catalogReader, typeFactory, defaultValueFactory, conformance);
   }
 
   @Override protected RelDataType getLogicalSourceRowType(
       RelDataType sourceRowType, SqlInsert insert) {
-    return ((JavaTypeFactory) typeFactory).toSql(sourceRowType);
+    final RelDataType superType = super.getLogicalSourceRowType(sourceRowType, insert);
+    return ((JavaTypeFactory) typeFactory).toSql(superType);
   }
 
   @Override protected RelDataType getLogicalTargetRowType(
       RelDataType targetRowType, SqlInsert insert) {
-    return ((JavaTypeFactory) typeFactory).toSql(targetRowType);
+    final RelDataType superType = super.getLogicalTargetRowType(targetRowType, insert);
+    return ((JavaTypeFactory) typeFactory).toSql(superType);
   }
 }
 

@@ -27,6 +27,8 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.validate.SqlConformance;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.Litmus;
@@ -64,7 +66,10 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   /** Sets the SQL statement for a test. */
   public final Sql sql(String sql) {
-    return new Sql(sql, true, true, tester, false,
+    return sql(SqlConformanceEnum.DEFAULT, sql);
+  }
+  public final Sql sql(SqlConformance conformance, String sql) {
+    return new Sql(sql, true, true, tester, conformance, false,
         SqlToRelConverter.Config.DEFAULT);
   }
 
@@ -1470,8 +1475,15 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   @Test public void testInsert() {
     final String sql =
-        "insert into emp (deptno, empno, ename) values (10, 150, 'Fred')";
+        "insert into emp (deptno, empno, ename, job, mgr, hiredate, sal, comm, slacker)"
+            + " values (10, 150, 'Fred', 'job', 0, timestamp '1970-01-01 00:00:00', 1, 1, false)";
     sql(sql).ok();
+  }
+
+  @Test public void testInsertSubset() {
+    final String sql =
+        "insert into empnullables (deptno, empno, ename) values (10, 150, 'Fred')";
+    sql(SqlConformanceEnum.PRAGMATIC_2003, sql).ok();
   }
 
   @Test public void testDelete() {
@@ -1522,7 +1534,9 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertView() {
-    final String sql = "insert into emp_20 (empno, ename) values (150, 'Fred')";
+    final String sql =
+        "insert into emp_20 (empno, ename, job, mgr, hiredate, sal, comm, slacker)"
+            + " values (150, 'Fred', 'job', 0, timestamp '1970-01-01 00:00:00', 1, 1, false)";
     sql(sql).ok();
   }
 
@@ -1532,13 +1546,16 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertWithCustomColumnResolving2() {
-    final String sql = "insert into struct.t (f0.c0, f1.c2, c1) values (?, ?, ?)";
-    sql(sql).ok();
+    final String sql = "insert into struct.t_nullables (f0.c0, f1.c2, c1) values (?, ?, ?)";
+    sql(SqlConformanceEnum.PRAGMATIC_2003, sql).ok();
   }
 
   @Test public void testInsertViewWithCustomColumnResolving() {
-    final String sql = "insert into struct.t_10 (f0.c0, f1.c2, c1) values (?, ?, ?)";
-    sql(sql).ok();
+    final String sql =
+        "insert into struct.t_10"
+            + " (f0.c0, f1.c2, c1, k0, f1.a0, f2.a0, f0.c1, f2.c3)"
+            + " values (?, ?, ?, ?, ?, ?, ?, ?)";
+    sql(SqlConformanceEnum.PRAGMATIC_2003, sql).ok();
   }
 
   @Test public void testUpdateWithCustomColumnResolving() {
@@ -1788,6 +1805,11 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + "and exists (select * from emp e2 where e1.empno = e2.empno)";
     sql(sql).decorrelate(true).ok();
   }
+/*
+  @Test public void test() {
+    final String sql = "insert into emp values (1)";
+    sql(sql).ok();
+  }*/
 
   /**
    * Test case (correlated NOT EXISTS sub-query) for
@@ -2058,15 +2080,17 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     private final boolean expand;
     private final boolean decorrelate;
     private final Tester tester;
+    private final SqlConformance conformance;
     private final boolean trim;
     private final SqlToRelConverter.Config config;
 
-    Sql(String sql, boolean expand, boolean decorrelate, Tester tester,
+    Sql(String sql, boolean expand, boolean decorrelate, Tester tester, SqlConformance conformance,
         boolean trim, SqlToRelConverter.Config config) {
       this.sql = sql;
       this.expand = expand;
       this.decorrelate = decorrelate;
       this.tester = tester;
+      this.conformance = conformance;
       this.trim = trim;
       this.config = config;
     }
@@ -2078,28 +2102,29 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     public void convertsTo(String plan) {
       tester.withExpand(expand)
           .withDecorrelation(decorrelate)
+          .withConformance(conformance)
           .withConfig(config)
           .assertConvertsTo(sql, plan, trim);
     }
 
     public Sql withConfig(SqlToRelConverter.Config config) {
-      return new Sql(sql, expand, decorrelate, tester, trim, config);
+      return new Sql(sql, expand, decorrelate, tester, conformance, trim, config);
     }
 
     public Sql expand(boolean expand) {
-      return new Sql(sql, expand, decorrelate, tester, trim, config);
+      return new Sql(sql, expand, decorrelate, tester, conformance, trim, config);
     }
 
     public Sql decorrelate(boolean decorrelate) {
-      return new Sql(sql, expand, decorrelate, tester, trim, config);
+      return new Sql(sql, expand, decorrelate, tester, conformance, trim, config);
     }
 
     public Sql with(Tester tester) {
-      return new Sql(sql, expand, decorrelate, tester, trim, config);
+      return new Sql(sql, expand, decorrelate, tester, conformance, trim, config);
     }
 
     public Sql trim(boolean trim) {
-      return new Sql(sql, expand, decorrelate, tester, trim, config);
+      return new Sql(sql, expand, decorrelate, tester, conformance, trim, config);
     }
   }
 }
