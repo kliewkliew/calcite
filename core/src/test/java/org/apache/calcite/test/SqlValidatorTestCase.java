@@ -85,10 +85,6 @@ public class SqlValidatorTestCase {
   }
 
   public final Sql sql(String sql) {
-    return sql(tester, sql);
-  }
-
-  public final Sql sql(SqlTester tester, String sql) {
     return new Sql(tester, sql);
   }
 
