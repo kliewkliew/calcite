@@ -26,12 +26,12 @@ import org.apache.calcite.sql.SqlFunction;
 import java.util.List;
 
 /**
- * An implementation of {@link DefaultValueFactory} that always supplies NULL.
+ * An implementation of {@link InitializerExpressionFactory} that always supplies NULL.
  */
-public class NullDefaultValueFactory implements DefaultValueFactory {
+public class NullInitializerExpressionFactory implements InitializerExpressionFactory {
   private final RexBuilder rexBuilder;
 
-  public NullDefaultValueFactory(RelDataTypeFactory typeFactory) {
+  public NullInitializerExpressionFactory(RelDataTypeFactory typeFactory) {
     this.rexBuilder = new RexBuilder(typeFactory);
   }
 
@@ -49,4 +49,4 @@ public class NullDefaultValueFactory implements DefaultValueFactory {
   }
 }
 
-// End NullDefaultValueFactory.java
+// End NullInitializerExpressionFactory.java

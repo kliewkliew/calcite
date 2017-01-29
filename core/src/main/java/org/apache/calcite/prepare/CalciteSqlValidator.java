@@ -22,14 +22,14 @@ import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
-import org.apache.calcite.sql2rel.DefaultValueFactory;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 
 /** Validator. */
 class CalciteSqlValidator extends SqlValidatorImpl {
   public CalciteSqlValidator(SqlOperatorTable opTab,
       CalciteCatalogReader catalogReader, JavaTypeFactory typeFactory,
-      DefaultValueFactory defaultValueFactory, SqlConformance conformance) {
-    super(opTab, catalogReader, typeFactory, defaultValueFactory, conformance);
+      InitializerExpressionFactory initializerExpressionFactory, SqlConformance conformance) {
+    super(opTab, catalogReader, typeFactory, initializerExpressionFactory, conformance);
   }
 
   @Override protected RelDataType getLogicalSourceRowType(

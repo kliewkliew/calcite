@@ -40,7 +40,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeUtil;
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.Pair;
@@ -192,7 +192,7 @@ public class SqlValidatorUtil {
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
-      NullDefaultValueFactory defaultValueFactory,
+      NullInitializerExpressionFactory defaultValueFactory,
       SqlConformance conformance) {
     return new SqlValidatorImpl(opTab, catalogReader, typeFactory,
         defaultValueFactory, conformance);
@@ -208,7 +208,7 @@ public class SqlValidatorUtil {
       RelDataTypeFactory typeFactory,
       SqlConformance conformance) {
     return newValidator(opTab, catalogReader, typeFactory,
-        new NullDefaultValueFactory(typeFactory), conformance);
+        new NullInitializerExpressionFactory(typeFactory), conformance);
   }
 
   /**
@@ -221,7 +221,7 @@ public class SqlValidatorUtil {
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory) {
     return newValidator(opTab, catalogReader, typeFactory,
-        new NullDefaultValueFactory(typeFactory), SqlConformanceEnum.DEFAULT);
+        new NullInitializerExpressionFactory(typeFactory), SqlConformanceEnum.DEFAULT);
   }
 
   /**

@@ -566,7 +566,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
    * Mock implementation of
    * {@link org.apache.calcite.prepare.Prepare.PreparingTable}.
    */
-  public static class MockTable implements Prepare.PreparingTable {
+  public static class MockTable extends Prepare.AbstractPreparingTable {
     protected final MockCatalogReader catalogReader;
     private final boolean stream;
     private final double rowCount;

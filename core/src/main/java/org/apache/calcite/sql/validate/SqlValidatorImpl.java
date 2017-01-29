@@ -77,8 +77,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.util.SqlVisitor;
-import org.apache.calcite.sql2rel.DefaultValueFactory;
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.BitString;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -222,8 +222,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   protected final RelDataTypeFactory typeFactory;
   protected final RelDataType unknownType;
   private final RelDataType booleanType;
-  private final DefaultValueFactory defaultValueFactory;
-  private final DefaultValueFactory nullDefaultValueFactory;
+  private final InitializerExpressionFactory initializerExpressionFactory;
 
   /**
    * Map of derived RelDataType for each node. This is an IdentityHashMap
@@ -266,20 +265,19 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
    * @param opTab         Operator table
    * @param catalogReader Catalog reader
    * @param typeFactory   Type factory
-   * @param defaultValueFactory Factory for default values
+   * @param initializerExpressionFactory Factory for default values
    * @param conformance   Compatibility mode
    */
   protected SqlValidatorImpl(
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
-      DefaultValueFactory defaultValueFactory,
+      InitializerExpressionFactory initializerExpressionFactory,
       SqlConformance conformance) {
     this.opTab = Preconditions.checkNotNull(opTab);
     this.catalogReader = Preconditions.checkNotNull(catalogReader);
     this.typeFactory = Preconditions.checkNotNull(typeFactory);
-    this.defaultValueFactory = Preconditions.checkNotNull(defaultValueFactory);
-    this.nullDefaultValueFactory = new NullDefaultValueFactory(typeFactory);
+    this.initializerExpressionFactory = Preconditions.checkNotNull(initializerExpressionFactory);
     this.conformance = Preconditions.checkNotNull(conformance);
 
     // NOTE jvs 23-Dec-2003:  This is used as the type for dynamic
@@ -3794,35 +3792,25 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       RelDataType logicalSourceRowType,
       RelDataType logicalTargetRowType) {
     final int sourceFieldCount = logicalSourceRowType.getFieldCount();
-    if (conformance.isInsertSubsetColumnsAllowed()) {
-      final int targetFieldCount = logicalTargetRowType.getFieldCount();
-      if (sourceFieldCount > targetFieldCount) {
-        throw newValidationError(node,
-            RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
-      }
-
-      for (RelDataTypeField field : table.getRowType().getFieldList()) {
-        if (!field.getType().isNullable()) {
-          final RelDataTypeField targetField =
-              logicalTargetRowType.getField(field.getName(), true, false);
-          final RexNode defaultValue =
-              nullDefaultValueFactory.newColumnDefaultValue((RelOptTable) table,
-                  field.getIndex());
-          final RexNode defaultValue1 =
-              defaultValueFactory.newColumnDefaultValue((RelOptTable) table,
-                  field.getIndex());
-          final boolean defaultIsNull = defaultValue.equals(defaultValue1);
-          if (targetField == null && defaultIsNull) {
-            throw newValidationError(node,
-                RESOURCE.columnNotNullable(field.getName()));
-          }
+    final int targetFieldCount = logicalTargetRowType.getFieldCount();
+    if (sourceFieldCount > targetFieldCount) {
+      throw newValidationError(node,
+          RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
+    }
+    // Ensure that non-nullable fields are targeted.
+    for (final RelDataTypeField field : table.getRowType().getFieldList()) {
+      if (!field.getType().isNullable()) {
+        final RelDataTypeField targetField =
+            logicalTargetRowType.getField(field.getName(), true, false);
+        final RexNode defaultValue =
+            initializerExpressionFactory.newColumnDefaultValue(
+                (RelOptTable) table, field.getIndex());
+        final boolean defaultIsNull =
+            defaultValue.getType().getSqlTypeName().equals(SqlTypeName.NULL);
+        if (targetField == null && defaultIsNull) {
+          throw newValidationError(node,
+              RESOURCE.columnNotNullable(field.getName()));
         }
-      }
-    } else {
-      final int targetFieldCount = table.getRowType().getFieldCount();
-      if (sourceFieldCount != targetFieldCount) {
-        throw newValidationError(node,
-            RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
       }
     }
   }
@@ -3830,8 +3818,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   protected RelDataType getLogicalTargetRowType(
       RelDataType targetRowType,
       SqlInsert insert) {
-    if (conformance.isInsertSubsetColumnsAllowed()
-        && insert.getTargetColumnList() == null) {
+    if (insert.getTargetColumnList() == null) {
       // Target an implicit subset of columns.
       final SqlNode source = insert.getSource();
       final RelDataType sourceRowType = getNamespace(source).getRowType();
@@ -4401,8 +4388,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     throw new UnsupportedOperationException();
   }
 
-  public DefaultValueFactory getDefaultValueFactory() {
-    return defaultValueFactory;
+  public InitializerExpressionFactory getInitializerExpressionFactory() {
+    return initializerExpressionFactory;
   }
 
   //~ Inner Classes ----------------------------------------------------------

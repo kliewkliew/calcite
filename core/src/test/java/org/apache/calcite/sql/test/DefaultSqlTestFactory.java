@@ -30,7 +30,7 @@ import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql.validate.SqlValidatorWithHints;
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.test.MockCatalogReader;
 import org.apache.calcite.test.MockSqlOperatorTable;
@@ -95,7 +95,7 @@ public class DefaultSqlTestFactory implements SqlTestFactory {
         new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
     return SqlValidatorUtil.newValidator(operatorTable,
         new MockCatalogReader(typeFactory, caseSensitive).init(),
-        typeFactory, new NullDefaultValueFactory(typeFactory), conformance);
+        typeFactory, new NullInitializerExpressionFactory(typeFactory), conformance);
   }
 
   public SqlAdvisor createAdvisor(SqlValidatorWithHints validator) {

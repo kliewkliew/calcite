@@ -56,8 +56,8 @@ import org.apache.calcite.sql.advise.SqlAdvisorValidator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidatorWithHints;
-import org.apache.calcite.sql2rel.DefaultValueFactory;
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.tools.RelRunner;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.Holder;
@@ -170,6 +170,11 @@ abstract class CalciteConnectionImpl
           });
     }
     return super.unwrap(iface);
+  }
+
+  public boolean isWrapperFor(Class<?> iface) throws SQLException {
+    return iface.isInstance(RelRunner.class)
+        || super.isWrapperFor(iface);
   }
 
   @Override public CalciteStatement createStatement(int resultSetType,
@@ -429,7 +434,7 @@ abstract class CalciteConnectionImpl
           new SqlAdvisorValidator(SqlStdOperatorTable.instance(),
               new CalciteCatalogReader(rootSchema, con.config().caseSensitive(),
                   schemaPath, typeFactory),
-              typeFactory, new NullDefaultValueFactory(typeFactory),
+              typeFactory, new NullInitializerExpressionFactory(typeFactory),
               SqlConformanceEnum.DEFAULT);
       return new SqlAdvisor(validator);
     }
@@ -478,8 +483,12 @@ abstract class CalciteConnectionImpl
       return connection.createDataContext(ImmutableMap.<String, Object>of());
     }
 
-    public DefaultValueFactory getDefaultValueFactory() {
-      return connection.getDefaultValueFactory();
+    public InitializerExpressionFactory getDefaultValueFactory() {
+      try {
+        return connection.unwrap(InitializerExpressionFactory.class);
+      } catch (SQLException e) {
+        return new NullInitializerExpressionFactory(getTypeFactory());
+      }
     }
 
     public CalcitePrepare.SparkHandler spark() {
@@ -543,10 +552,6 @@ abstract class CalciteConnectionImpl
     public void setResultSet(Iterator<Object> iterator) {
       this.iterator = iterator;
     }
-  }
-
-  public DefaultValueFactory getDefaultValueFactory() {
-    return new NullDefaultValueFactory(typeFactory);
   }
 
 }

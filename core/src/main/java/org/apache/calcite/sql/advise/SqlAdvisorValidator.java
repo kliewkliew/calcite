@@ -33,7 +33,7 @@ import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorNamespace;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
-import org.apache.calcite.sql2rel.DefaultValueFactory;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.Util;
 
 import java.util.HashSet;
@@ -61,16 +61,16 @@ public class SqlAdvisorValidator extends SqlValidatorImpl {
    * @param opTab         Operator table
    * @param catalogReader Catalog reader
    * @param typeFactory   Type factory
-   * @param defaultValueFactory Factory for default values
+   * @param initializerExpressionFactory Factory for default values
    * @param conformance   Compatibility mode
    */
   public SqlAdvisorValidator(
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
-      DefaultValueFactory defaultValueFactory,
+      InitializerExpressionFactory initializerExpressionFactory,
       SqlConformance conformance) {
-    super(opTab, catalogReader, typeFactory, defaultValueFactory, conformance);
+    super(opTab, catalogReader, typeFactory, initializerExpressionFactory, conformance);
   }
 
   //~ Methods ----------------------------------------------------------------

@@ -8089,51 +8089,42 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         + "values (1, 'Jim', 'Baker', timestamp '1970-01-01 00:00:00')";
     pragmaticTester.checkQuery(sql2);
 
-    if (false) {
-      // TODO: fix or remove
-      pragmaticTester.checkQuery(
-          "insert into emp (empno) select 1 from (values 'a')");
+    pragmaticTester.checkQuery(
+        "insert into empnullables (empno, ename) select 1, 'b' from (values 'a')");
 
-      tester.checkQuery("insert into ^empnullables^ (empno) values (1)");
-      tester.checkQuery(
-          "insert into ^empnullables^ (empno) select 1 from (values 'a')");
-    }
+    pragmaticTester.checkQuery("insert into empnullables (empno, ename) values (1, 'Karl')");
   }
 
   @Test public void testInsertSubsetAllowedFailNullability() {
     final SqlTester pragmaticTester =
         tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003);
     pragmaticTester.checkQueryFails("insert into ^empnullables^ values (1)",
-        "Column 'ENAME' is not nullable");
+        "Column 'ENAME' has no default value and does not allow NULLs");
     pragmaticTester.checkQueryFails(
         "insert into ^empnullables^ (ename) values ('Kevin')",
-        "Column 'EMPNO' is not nullable");
+        "Column 'EMPNO' has no default value and does not allow NULLs");
   }
 
   @Test public void testInsertSubsetDisallowed() {
     tester.checkQueryFails("insert into ^emp^ values (1)",
-        "Number of INSERT target columns \\(9\\) does not equal number of "
-            + "source items \\(1\\)");
-    tester.checkQueryFails(
-        "insert into ^emp^ (empno, ename) values (1, 'Kevin')",
-        "Number of INSERT target columns \\(9\\) does not equal number of "
-            + "source items \\(2\\)");
+        "Column 'ENAME' has no default value and does not allow NULLs");
+    tester.checkQuery("insert into ^empnullables^ (empno, ename) values (1, 'Kevin')");
   }
 
   @Test public void testInsertBind() {
     final SqlTester pragmaticTester =
         tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003);
     // VALUES
-    final String sql0 = "insert into empnullables (empno, deptno)\n"
-        + "values (?, ?)";
+    final String sql0 = "insert into empnullables (empno, ename, deptno)\n"
+        + "values (?, ?, ?)";
     sql(sql0).tester(pragmaticTester).ok()
-        .bindType("RecordType(INTEGER ?0, INTEGER ?1)");
+        .bindType("RecordType(INTEGER ?0, VARCHAR(20) ?1, INTEGER ?2)");
 
     // multiple VALUES
-    final String sql1 = "insert into empnullables (empno, deptno)\n"
-        + "values (?, 1), (2, ?), (3, null)";
+    final String sql1 = "insert into empnullables (empno, ename, deptno)\n"
+        + "values (?, 'Pat', 1), (2, ?, ?), (3, 'Tod', ?), (4, null, null)";
     sql(sql1).tester(pragmaticTester).ok()
-        .bindType("RecordType(INTEGER ?0, INTEGER ?1)");
+        .bindType("RecordType(INTEGER ?0, VARCHAR(20) ?1, INTEGER ?2, INTEGER ?3)");
 
     // VALUES with expression
     sql("insert into empnullables (ename, empno) values (?, ? + 1)")

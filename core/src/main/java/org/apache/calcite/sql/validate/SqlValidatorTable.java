@@ -44,6 +44,8 @@ public interface SqlValidatorTable {
   SqlAccessType getAllowedAccess();
 
   boolean supportsModality(SqlModality modality);
+
+  boolean columnHasDefaultValue(RelDataType rowType, int ordinal);
 }
 
 // End SqlValidatorTable.java

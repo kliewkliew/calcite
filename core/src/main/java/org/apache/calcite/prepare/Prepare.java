@@ -398,6 +398,12 @@ public abstract class Prepare {
       extends RelOptTable, SqlValidatorTable {
   }
 
+  public static abstract class AbstractPreparingTable implements PreparingTable {
+    public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
+      return rowType.getFieldList().get(ordinal).getType().isNullable();
+    }
+  }
+
   /**
    * PreparedExplanation is a PreparedResult for an EXPLAIN PLAN statement.
    * It's always good to have an explanation prepared.

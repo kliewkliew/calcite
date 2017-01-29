@@ -34,7 +34,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 
 import org.junit.Test;
 
@@ -154,7 +154,7 @@ public class SqlValidatorFeatureTest extends SqlValidatorTestCase {
         RelDataTypeFactory typeFactory,
         SqlConformance conformance) {
       super(opTab, catalogReader, typeFactory,
-          new NullDefaultValueFactory(typeFactory), conformance);
+          new NullInitializerExpressionFactory(typeFactory), conformance);
     }
 
     protected void validateFeature(

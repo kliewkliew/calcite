@@ -50,7 +50,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
-import org.apache.calcite.sql2rel.NullDefaultValueFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.sql2rel.RelFieldTrimmer;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
@@ -785,7 +785,7 @@ public abstract class SqlToRelTestBase {
         RelDataTypeFactory typeFactory,
         SqlConformance conformance) {
       super(opTab, catalogReader, typeFactory,
-          new NullDefaultValueFactory(typeFactory), conformance);
+          new NullInitializerExpressionFactory(typeFactory), conformance);
     }
 
     // override SqlValidator

@@ -222,7 +222,7 @@ public class SqlToRelConverter {
   protected final RexBuilder rexBuilder;
   protected final Prepare.CatalogReader catalogReader;
   protected final RelOptCluster cluster;
-  private DefaultValueFactory defaultValueFactory;
+  private InitializerExpressionFactory initializerExpressionFactory;
   private SubQueryConverter subQueryConverter;
   protected final List<RelNode> leaves = new ArrayList<>();
   private final List<SqlDynamicParam> dynamicParamSqlNodes = new ArrayList<>();
@@ -304,7 +304,7 @@ public class SqlToRelConverter {
             : validator.getOperatorTable();
     this.validator = validator;
     this.catalogReader = catalogReader;
-    this.defaultValueFactory = validator.getDefaultValueFactory();
+    this.initializerExpressionFactory = validator.getInitializerExpressionFactory();
     this.subQueryConverter = new NoOpSubQueryConverter();
     this.rexBuilder = cluster.getRexBuilder();
     this.typeFactory = rexBuilder.getTypeFactory();
@@ -390,13 +390,13 @@ public class SqlToRelConverter {
   }
 
   /**
-   * Set a new DefaultValueFactory. To have any effect, this must be called
+   * Set a new InitializerExpressionFactory. To have any effect, this must be called
    * before any convert method.
    *
-   * @param factory new DefaultValueFactory
+   * @param factory new InitializerExpressionFactory
    */
-  public void setDefaultValueFactory(DefaultValueFactory factory) {
-    defaultValueFactory = factory;
+  public void setInitializerExpressionFactory(InitializerExpressionFactory factory) {
+    initializerExpressionFactory = factory;
   }
 
   /**
@@ -3092,13 +3092,13 @@ public class SqlToRelConverter {
       final String fieldName = field.getName();
       fieldNames.set(i, fieldName);
       if (sourceExps.get(i) != null) {
-        if (defaultValueFactory.isGeneratedAlways(targetTable, i)) {
+        if (initializerExpressionFactory.isGeneratedAlways(targetTable, i)) {
           throw RESOURCE.insertIntoAlwaysGenerated(fieldName).ex();
         }
         continue;
       }
       sourceExps.set(
-          i, defaultValueFactory.newColumnDefaultValue(targetTable, i));
+          i, initializerExpressionFactory.newColumnDefaultValue(targetTable, i));
 
       // bare nulls are dangerous in the wrong hands
       sourceExps.set(
@@ -3136,7 +3136,7 @@ public class SqlToRelConverter {
     final RelDataType targetRowType = targetTable.getRowType();
     SqlNodeList targetColumnList = call.getTargetColumnList();
     if (targetColumnList == null) {
-      targetColumnNames.addAll(sourceRef.getType().getFieldNames());
+      targetColumnNames.addAll(targetRowType.getFieldNames());
     } else {
       for (int i = 0; i < targetColumnList.size(); i++) {
         SqlIdentifier id = (SqlIdentifier) targetColumnList.get(i);
@@ -4261,8 +4261,8 @@ public class SqlToRelConverter {
       return typeFactory;
     }
 
-    public DefaultValueFactory getDefaultValueFactory() {
-      return defaultValueFactory;
+    public InitializerExpressionFactory getDefaultValueFactory() {
+      return initializerExpressionFactory;
     }
 
     public SqlValidator getValidator() {

@@ -42,7 +42,7 @@ import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql2rel.DefaultValueFactory;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableIntList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -119,7 +119,7 @@ public interface CalcitePrepare {
 
     DataContext getDataContext();
 
-    DefaultValueFactory getDefaultValueFactory();
+    InitializerExpressionFactory getDefaultValueFactory();
   }
 
   /** Callback to register Spark as the main engine. */
