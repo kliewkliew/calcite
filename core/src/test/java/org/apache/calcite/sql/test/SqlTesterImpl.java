@@ -44,6 +44,7 @@ import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorNamespace;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.test.SqlValidatorTestCase;
 import org.apache.calcite.util.Pair;
@@ -303,6 +304,11 @@ public class SqlTesterImpl implements SqlTester, AutoCloseable {
   public SqlTester withConnectionFactory(
       CalciteAssert.ConnectionFactory connectionFactory) {
     return with("connectionFactory", connectionFactory);
+  }
+
+  public SqlTester withInitializerExpressionFactory(
+      InitializerExpressionFactory initializerExpressionFactory) {
+    return with("initializerExpressionFactory", initializerExpressionFactory);
   }
 
   protected SqlTesterImpl with(final String name2, final Object value) {

@@ -3815,11 +3815,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       if (!field.getType().isNullable()) {
         final RelDataTypeField targetField =
             logicalTargetRowType.getField(field.getName(), true, false);
-        final RexNode defaultValue =
-            initializerExpressionFactory.newColumnDefaultValue(
-                (RelOptTable) table, field.getIndex());
         final boolean defaultIsNull =
-            defaultValue.getType().getSqlTypeName().equals(SqlTypeName.NULL);
+            table.columnHasDefaultValue(logicalTargetRowType, field.getIndex());
         if (targetField == null && defaultIsNull) {
           throw newValidationError(node,
               RESOURCE.columnNotNullable(field.getName()));

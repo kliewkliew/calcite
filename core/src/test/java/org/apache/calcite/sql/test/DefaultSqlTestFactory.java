@@ -30,6 +30,7 @@ import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql.validate.SqlValidatorWithHints;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.test.MockCatalogReader;
@@ -60,6 +61,9 @@ public class DefaultSqlTestFactory implements SqlTestFactory {
                   .with(
                       new CalciteAssert.AddSchemaSpecPostProcessor(
                           CalciteAssert.SchemaSpec.HR)))
+          .put("initializerExpressionFactory",
+              new NullInitializerExpressionFactory(
+                  new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT)))
           .build();
 
   public static final DefaultSqlTestFactory INSTANCE =
@@ -93,9 +97,11 @@ public class DefaultSqlTestFactory implements SqlTestFactory {
         (SqlConformance) factory.get("conformance");
     final JavaTypeFactory typeFactory =
         new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+    final InitializerExpressionFactory initializerExpressionFactory =
+        (InitializerExpressionFactory) factory.get("initializerExpressionFactory");
     return SqlValidatorUtil.newValidator(operatorTable,
         new MockCatalogReader(typeFactory, caseSensitive).init(),
-        typeFactory, new NullInitializerExpressionFactory(typeFactory), conformance);
+        typeFactory, initializerExpressionFactory, conformance);
   }
 
   public SqlAdvisor createAdvisor(SqlValidatorWithHints validator) {

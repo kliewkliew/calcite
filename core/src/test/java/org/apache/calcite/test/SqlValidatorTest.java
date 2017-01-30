@@ -20,7 +20,12 @@ import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.config.Lex;
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
@@ -36,6 +41,7 @@ import org.apache.calcite.sql.validate.SqlDelegatingConformance;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableBitSet;
 
@@ -51,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -8257,6 +8264,31 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     final String expected2 = "RecordType(INTEGER ?0, VARCHAR(20) ?1,"
         + " INTEGER ?2, VARCHAR(20) ?3)";
     sql(sql2).tester(pragmaticTester).ok().bindType(expected2);
+  }
+
+  @Test public void testCustomInitializerExpressionFactory() {
+    final RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+    final SqlTester customInitTester = tester.withInitializerExpressionFactory(
+        new NullInitializerExpressionFactory(typeFactory) {
+      @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
+        final RexBuilder rexBuilder = new RexBuilder(typeFactory);
+        switch (iColumn) {
+        case 1:
+          return rexBuilder.makeExactLiteral(
+              new BigDecimal(123),
+              typeFactory.createSqlType(SqlTypeName.INTEGER));
+        case 2:
+          return rexBuilder.makeLiteral("Bob");
+        case 3:
+          return rexBuilder.makeExactLiteral(
+              new BigDecimal(321),
+              typeFactory.createSqlType(SqlTypeName.INTEGER));
+        default:
+          return rexBuilder.constantNull();
+        }
+      }
+    });
+    customInitTester.checkQuery("insert into empnullables (deptno) values (1)");
   }
 
   @Test public void testInsertBindWithCustomColumnResolving() {
