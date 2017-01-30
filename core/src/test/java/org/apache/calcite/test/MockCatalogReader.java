@@ -363,8 +363,8 @@ public class MockCatalogReader extends CalciteCatalogReader {
     suppliersTable.addColumn("CITY", intType);
     registerTable(suppliersTable);
 
-    // Register "EMP_20" and "EMPNULLABLES_20 views.
-    // Same columns as "EMP" amd "EMPNULLABLES",
+    // Register "EMP_20" view.
+    // Same columns as "EMP",
     // but "DEPTNO" not visible and set to 20 by default
     // and "SAL" is visible but must be greater than 1000,
     // which is the equivalent of:
@@ -405,41 +405,6 @@ public class MockCatalogReader extends CalciteCatalogReader {
     emp20View.addColumn("COMM", intType);
     emp20View.addColumn("SLACKER", booleanType);
     registerTable(emp20View);
-
-    MockTable empNullables20View = new MockViewTable(this, salesSchema.getCatalogName(),
-        salesSchema.name, "EMPNULLABLES_20", false, 600, empTable,
-        ImmutableIntList.of(0, 1, 2, 3, 4, 5, 6, 8), null) {
-
-      @Override public RexNode getConstraint(RexBuilder rexBuilder,
-          RelDataType tableRowType) {
-        final RelDataTypeField deptnoField =
-            tableRowType.getFieldList().get(7);
-        final RelDataTypeField salField =
-            tableRowType.getFieldList().get(5);
-        final List<RexNode> nodes = Arrays.asList(
-            rexBuilder.makeCall(SqlStdOperatorTable.EQUALS,
-                rexBuilder.makeInputRef(deptnoField.getType(),
-                    deptnoField.getIndex()),
-                rexBuilder.makeExactLiteral(BigDecimal.valueOf(20L),
-                    deptnoField.getType())),
-            rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN,
-                rexBuilder.makeInputRef(salField.getType(),
-                    salField.getIndex()),
-                rexBuilder.makeExactLiteral(BigDecimal.valueOf(1000L),
-                    salField.getType())));
-        return RexUtil.composeConjunction(rexBuilder, nodes, false);
-      }
-    };
-    salesSchema.addTable(Util.last(empNullables20View.getQualifiedName()));
-    empNullables20View.addColumn("EMPNO", intType);
-    empNullables20View.addColumn("ENAME", varchar20Type);
-    empNullables20View.addColumn("JOB", varchar10TypeNull);
-    empNullables20View.addColumn("MGR", intTypeNull);
-    empNullables20View.addColumn("HIREDATE", timestampTypeNull);
-    empNullables20View.addColumn("SAL", intTypeNull);
-    empNullables20View.addColumn("COMM", intTypeNull);
-    empNullables20View.addColumn("SLACKER", booleanTypeNull);
-    registerTable(empNullables20View);
 
     MockSchema structTypeSchema = new MockSchema("STRUCT");
     registerSchema(structTypeSchema);
