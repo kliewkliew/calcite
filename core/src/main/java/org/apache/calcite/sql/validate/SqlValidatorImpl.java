@@ -4053,6 +4053,14 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
       SqlCall rowConstructor = (SqlCall) operand;
       if (targetRowType.isStruct()
+          && rowConstructor.operandCount() < targetRowType.getFieldCount()) {
+        // Bind an implicit subset of parameters.
+        targetRowType =
+            typeFactory.createStructType(
+                targetRowType.getFieldList()
+                    .subList(0, rowConstructor.operandCount()));
+      }
+      else if (targetRowType.isStruct()
           && rowConstructor.operandCount() != targetRowType.getFieldCount()) {
         return;
       }
