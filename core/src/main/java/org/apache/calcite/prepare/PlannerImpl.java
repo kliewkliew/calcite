@@ -39,6 +39,7 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -179,7 +180,7 @@ public class PlannerImpl implements Planner {
     final CalciteCatalogReader catalogReader = createCatalogReader();
     this.validator =
         new CalciteSqlValidator(operatorTable, catalogReader, typeFactory,
-            conformance);
+            new NullInitializerExpressionFactory(typeFactory), conformance);
     this.validator.setIdentifierExpansion(true);
     try {
       validatedSqlNode = validator.validate(sqlNode);
@@ -251,7 +252,7 @@ public class PlannerImpl implements Planner {
           createCatalogReader().withSchemaPath(schemaPath);
       final SqlValidator validator =
           new CalciteSqlValidator(operatorTable, catalogReader, typeFactory,
-              conformance);
+              new NullInitializerExpressionFactory(typeFactory), conformance);
       validator.setIdentifierExpansion(true);
       final SqlNode validatedSqlNode = validator.validate(sqlNode);
 

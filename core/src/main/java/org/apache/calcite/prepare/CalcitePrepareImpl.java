@@ -837,7 +837,7 @@ public class CalcitePrepareImpl implements CalcitePrepare {
     final JavaTypeFactory typeFactory = context.getTypeFactory();
     final SqlConformance conformance = context.config().conformance();
     return new CalciteSqlValidator(opTab, catalogReader, typeFactory,
-        conformance);
+        context.getInitializerExpressionFactory(), conformance);
   }
 
   private List<ColumnMetaData> getColumnMetaDataList(

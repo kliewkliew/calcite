@@ -41,6 +41,7 @@ import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlWindow;
 import org.apache.calcite.sql.SqlWith;
 import org.apache.calcite.sql.SqlWithItem;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.Util;
 
 import java.util.List;
@@ -746,6 +747,8 @@ public interface SqlValidator {
   void validateSequenceValue(SqlValidatorScope scope, SqlIdentifier id);
 
   SqlValidatorScope getWithScope(SqlNode withItem);
+
+  InitializerExpressionFactory getInitializerExpressionFactory();
 }
 
 // End SqlValidator.java

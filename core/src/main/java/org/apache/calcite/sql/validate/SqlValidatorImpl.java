@@ -76,6 +76,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.BitString;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -255,6 +256,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private boolean inWindow;                        // Allow nested aggregates
 
+  private final InitializerExpressionFactory initializerExpressionFactory;
+
   //~ Constructors -----------------------------------------------------------
 
   /**
@@ -263,16 +266,19 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
    * @param opTab         Operator table
    * @param catalogReader Catalog reader
    * @param typeFactory   Type factory
+   * @param initializerExpressionFactory Factory for default values
    * @param conformance   Compatibility mode
    */
   protected SqlValidatorImpl(
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
+      InitializerExpressionFactory initializerExpressionFactory,
       SqlConformance conformance) {
     this.opTab = Preconditions.checkNotNull(opTab);
     this.catalogReader = Preconditions.checkNotNull(catalogReader);
     this.typeFactory = Preconditions.checkNotNull(typeFactory);
+    this.initializerExpressionFactory = Preconditions.checkNotNull(initializerExpressionFactory);
     this.conformance = Preconditions.checkNotNull(conformance);
 
     // NOTE jvs 23-Dec-2003:  This is used as the type for dynamic
@@ -3785,7 +3791,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     RelDataType logicalSourceRowType =
         getLogicalSourceRowType(sourceRowType, insert);
 
-    checkFieldCount(insert, logicalSourceRowType, logicalTargetRowType);
+    checkFieldCount(insert, table, logicalSourceRowType, logicalTargetRowType);
 
     checkTypeAssignment(logicalSourceRowType, logicalTargetRowType, insert);
 
@@ -3794,6 +3800,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private void checkFieldCount(
       SqlNode node,
+      SqlValidatorTable table,
       RelDataType logicalSourceRowType,
       RelDataType logicalTargetRowType) {
     final int sourceFieldCount = logicalSourceRowType.getFieldCount();
@@ -3802,12 +3809,44 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       throw newValidationError(node,
           RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
     }
+    // Ensure that non-nullable fields are targeted.
+    for (final RelDataTypeField field : table.getRowType().getFieldList()) {
+      if (!field.getType().isNullable()) {
+        final RelDataTypeField targetField =
+            logicalTargetRowType.getField(field.getName(), true, false);
+        final boolean defaultIsNull =
+            table.columnHasDefaultValue(logicalTargetRowType, field.getIndex());
+        if (targetField == null && defaultIsNull) {
+          throw newValidationError(node,
+              RESOURCE.columnNotNullable(field.getName()));
+        }
+      }
+    }
   }
 
   protected RelDataType getLogicalTargetRowType(
       RelDataType targetRowType,
       SqlInsert insert) {
-    return targetRowType;
+    if (insert.getTargetColumnList() == null) {
+      // Target an implicit subset of columns.
+      final SqlNode source = insert.getSource();
+      final RelDataType sourceRowType = getNamespace(source).getRowType();
+      final RelDataType logicalSourceRowType =
+          getLogicalSourceRowType(sourceRowType, insert);
+      if (conformance.isInsertSubsetColumnsAllowed()) {
+        targetRowType =
+            typeFactory.createStructType(
+                targetRowType.getFieldList()
+                    .subList(0, logicalSourceRowType.getFieldCount()));
+      }
+      final SqlValidatorNamespace targetNamespace = getNamespace(insert);
+      validateNamespace(targetNamespace, targetRowType);
+      return targetRowType;
+    } else {
+      // Either the set of columns are explicitly targeted, or target the full
+      // set of columns.
+      return targetRowType;
+    }
   }
 
   protected RelDataType getLogicalSourceRowType(
@@ -4024,7 +4063,13 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       }
 
       SqlCall rowConstructor = (SqlCall) operand;
-      if (targetRowType.isStruct()
+      if (conformance.isInsertSubsetColumnsAllowed() && targetRowType.isStruct()
+          && rowConstructor.operandCount() < targetRowType.getFieldCount()) {
+        targetRowType =
+            typeFactory.createStructType(
+                targetRowType.getFieldList()
+                    .subList(0, rowConstructor.operandCount()));
+      } else if (targetRowType.isStruct()
           && rowConstructor.operandCount() != targetRowType.getFieldCount()) {
         return;
       }
@@ -4033,6 +4078,18 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
           targetRowType,
           scope,
           rowConstructor);
+
+      if (targetRowType.isStruct()) {
+        for (int colNum = 0; colNum < rowConstructor.getOperandList().size(); colNum++) {
+          final SqlNode colOperand = rowConstructor.getOperandList().get(colNum);
+          final RelDataTypeField targetField = targetRowType.getFieldList().get(colNum);
+          if (!targetField.getType().isNullable()
+              && SqlUtil.isNullLiteral(colOperand, false)) {
+            throw newValidationError(node,
+                RESOURCE.columnNotNullable(targetField.getName()));
+          }
+        }
+      }
     }
 
     for (SqlNode operand : operands) {
@@ -4358,6 +4415,10 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       List<RelDataType> argTypes,
       List<SqlNode> operands) {
     throw new UnsupportedOperationException();
+  }
+
+  public InitializerExpressionFactory getInitializerExpressionFactory() {
+    return initializerExpressionFactory;
   }
 
   //~ Inner Classes ----------------------------------------------------------

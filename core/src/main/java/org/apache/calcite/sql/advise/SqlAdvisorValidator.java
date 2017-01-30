@@ -33,6 +33,7 @@ import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorNamespace;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.Util;
 
 import java.util.HashSet;
@@ -47,8 +48,7 @@ import java.util.Set;
 public class SqlAdvisorValidator extends SqlValidatorImpl {
   //~ Instance fields --------------------------------------------------------
 
-  private final Set<SqlValidatorNamespace> activeNamespaces =
-      new HashSet<SqlValidatorNamespace>();
+  private final Set<SqlValidatorNamespace> activeNamespaces = new HashSet<>();
 
   private final RelDataType emptyStructType =
       SqlTypeUtil.createEmptyStructType(typeFactory);
@@ -61,23 +61,22 @@ public class SqlAdvisorValidator extends SqlValidatorImpl {
    * @param opTab         Operator table
    * @param catalogReader Catalog reader
    * @param typeFactory   Type factory
+   * @param initializerExpressionFactory Factory for default values
    * @param conformance   Compatibility mode
    */
   public SqlAdvisorValidator(
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
+      InitializerExpressionFactory initializerExpressionFactory,
       SqlConformance conformance) {
-    super(opTab, catalogReader, typeFactory, conformance);
-    assert opTab != null;
-    assert catalogReader != null;
-    assert typeFactory != null;
+    super(opTab, catalogReader, typeFactory, initializerExpressionFactory, conformance);
   }
 
   //~ Methods ----------------------------------------------------------------
 
   /**
-   * Registers the identifier and its scope into a map keyed by ParserPostion.
+   * Registers the identifier and its scope into a map keyed by ParserPosition.
    */
   public void validateIdentifier(SqlIdentifier id, SqlValidatorScope scope) {
     registerId(id, scope);
@@ -124,11 +123,7 @@ public class SqlAdvisorValidator extends SqlValidatorImpl {
     // Util.permAssert that throws Error
     try {
       return super.deriveType(scope, operand);
-    } catch (CalciteException e) {
-      return unknownType;
-    } catch (UnsupportedOperationException e) {
-      return unknownType;
-    } catch (Error e) {
+    } catch (CalciteException | UnsupportedOperationException | Error e) {
       return unknownType;
     }
   }

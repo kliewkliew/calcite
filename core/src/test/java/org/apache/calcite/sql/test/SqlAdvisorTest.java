@@ -29,6 +29,7 @@ import org.apache.calcite.sql.validate.SqlMoniker;
 import org.apache.calcite.sql.validate.SqlMonikerType;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorWithHints;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.test.MockCatalogReader;
 import org.apache.calcite.test.SqlValidatorTestCase;
 
@@ -69,8 +70,10 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
       Arrays.asList(
           "SCHEMA(CATALOG.SALES)",
           "TABLE(CATALOG.SALES.EMP)",
+          "TABLE(CATALOG.SALES.EMPNULLABLES)",
           "TABLE(CATALOG.SALES.EMP_B)",
           "TABLE(CATALOG.SALES.EMP_20)",
+          "TABLE(CATALOG.SALES.EMPNULLABLES_20)",
           "TABLE(CATALOG.SALES.EMP_ADDRESS)",
           "TABLE(CATALOG.SALES.DEPT)",
           "TABLE(CATALOG.SALES.DEPT_NESTED)",
@@ -1219,7 +1222,7 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
           SqlStdOperatorTable.instance(),
           new MockCatalogReader(typeFactory, caseSensitive).init(),
           typeFactory,
-          conformance);
+          new NullInitializerExpressionFactory(typeFactory), conformance);
     }
 
     @Override public SqlAdvisor createAdvisor(SqlValidatorWithHints validator) {
