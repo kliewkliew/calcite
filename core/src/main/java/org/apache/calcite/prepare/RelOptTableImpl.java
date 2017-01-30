@@ -307,8 +307,7 @@ public class RelOptTableImpl extends Prepare.AbstractPreparingTable {
     }
   }
 
-  @Override
-  public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
+  @Override public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
     if (table instanceof Wrapper) {
       return ((Wrapper) table).unwrap(InitializerExpressionFactory.class)
           .newColumnDefaultValue(this, ordinal)

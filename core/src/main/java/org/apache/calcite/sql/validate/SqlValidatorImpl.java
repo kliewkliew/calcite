@@ -221,7 +221,6 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   protected final RelDataTypeFactory typeFactory;
   protected final RelDataType unknownType;
   private final RelDataType booleanType;
-  private final InitializerExpressionFactory initializerExpressionFactory;
 
   /**
    * Map of derived RelDataType for each node. This is an IdentityHashMap
@@ -255,6 +254,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   private boolean validatingSqlMerge;
 
   private boolean inWindow;                        // Allow nested aggregates
+
+  private final InitializerExpressionFactory initializerExpressionFactory;
 
   //~ Constructors -----------------------------------------------------------
 
@@ -4060,8 +4061,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             typeFactory.createStructType(
                 targetRowType.getFieldList()
                     .subList(0, rowConstructor.operandCount()));
-      }
-      else if (targetRowType.isStruct()
+      } else if (targetRowType.isStruct()
           && rowConstructor.operandCount() != targetRowType.getFieldCount()) {
         return;
       }

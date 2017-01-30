@@ -398,7 +398,10 @@ public abstract class Prepare {
       extends RelOptTable, SqlValidatorTable {
   }
 
-  public static abstract class AbstractPreparingTable implements PreparingTable {
+  /**
+   * Abstract PreparingTable with an implementation for columnHasDefaultValue.
+   */
+  public abstract static class AbstractPreparingTable implements PreparingTable {
     public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
       return rowType.getFieldList().get(ordinal).getType().isNullable();
     }

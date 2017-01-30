@@ -3142,8 +3142,7 @@ public class SqlToRelConverter {
                 tableRowType.getFieldList()
                     .subList(0, sourceRef.getType().getFieldCount()));
         targetColumnNames.addAll(targetRowType.getFieldNames());
-      }
-      else {
+      } else {
         targetColumnNames.addAll(tableRowType.getFieldNames());
       }
     } else {

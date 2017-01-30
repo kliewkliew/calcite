@@ -1485,12 +1485,24 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test public void testInsertBindSubset() {
     final String sql = "insert into empnullables (deptno, empno, ename)\n"
         + "values (?, ?, ?)";
-    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+    sql(sql).ok();
   }
 
   @Test public void testInsertBindImplicitSubset() {
     final String sql = "insert into empnullables \n"
         + "values (?, ?)";
+    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+  }
+
+  @Test public void testInsertSubsetView() {
+    final String sql = "insert into empnullables_20 (mgr, empno, ename)\n"
+        + "values (10, 150, 'Fred')";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertImplicitSubsetView() {
+    final String sql = "insert into empnullables_20 \n"
+        + "values (10, 'Fred')";
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 
