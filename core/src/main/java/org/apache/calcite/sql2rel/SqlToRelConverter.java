@@ -3133,16 +3133,25 @@ public class SqlToRelConverter {
       final List<String> targetColumnNames,
       List<RexNode> columnExprs) {
     final RelOptTable targetTable = getTargetTable(call);
-    final RelDataType targetRowType = targetTable.getRowType();
+    final RelDataType tableRowType = targetTable.getRowType();
     SqlNodeList targetColumnList = call.getTargetColumnList();
     if (targetColumnList == null) {
-      targetColumnNames.addAll(targetRowType.getFieldNames());
+      if (validator.getConformance().isInsertSubsetColumnsAllowed()) {
+        final RelDataType targetRowType =
+            typeFactory.createStructType(
+                tableRowType.getFieldList()
+                    .subList(0, sourceRef.getType().getFieldCount()));
+        targetColumnNames.addAll(targetRowType.getFieldNames());
+      }
+      else {
+        targetColumnNames.addAll(tableRowType.getFieldNames());
+      }
     } else {
       for (int i = 0; i < targetColumnList.size(); i++) {
         SqlIdentifier id = (SqlIdentifier) targetColumnList.get(i);
         RelDataTypeField field =
             SqlValidatorUtil.getTargetField(
-                targetRowType, typeFactory, id, catalogReader, targetTable);
+                tableRowType, typeFactory, id, catalogReader, targetTable);
         assert field != null : "column " + id.toString() + " not found";
         targetColumnNames.add(field.getName());
       }

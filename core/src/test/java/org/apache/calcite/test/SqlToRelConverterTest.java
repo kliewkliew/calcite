@@ -1470,17 +1470,27 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
-  @Test public void testInsert() {
-    final String sql = "insert into emp (deptno, empno, ename, job, mgr,\n"
-        + "  hiredate, sal, comm, slacker)\n"
-        + "values (10, 150, 'Fred', 'job', 0,\n"
-        + "  timestamp '1970-01-01 00:00:00', 1, 1, false)";
-    sql(sql).ok();
-  }
-
   @Test public void testInsertSubset() {
     final String sql = "insert into empnullables (deptno, empno, ename)\n"
         + "values (10, 150, 'Fred')";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertImplicitSubset() {
+    final String sql = "insert into empnullables \n"
+        + "values (50, 'Fred')";
+    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+  }
+
+  @Test public void testInsertBindSubset() {
+    final String sql = "insert into empnullables (deptno, empno, ename)\n"
+        + "values (?, ?, ?)";
+    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+  }
+
+  @Test public void testInsertBindImplicitSubset() {
+    final String sql = "insert into empnullables \n"
+        + "values (?, ?)";
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 
@@ -1532,9 +1542,9 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertView() {
-    final String sql = "insert into emp_20 (empno, ename, job, mgr, hiredate,\n"
+    final String sql = "insert into emp_20 (empno, ename, job, hiredate,\n"
         + "  sal, comm, slacker)\n"
-        + "values (150, 'Fred', 'job', 0, timestamp '1970-01-01 00:00:00',\n"
+        + "values (150, 'Fred', 'job', timestamp '1970-01-01 00:00:00',\n"
         + "  1, 1, false)";
     sql(sql).ok();
   }

@@ -3793,7 +3793,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       RelDataType logicalTargetRowType) {
     final int sourceFieldCount = logicalSourceRowType.getFieldCount();
     final int targetFieldCount = logicalTargetRowType.getFieldCount();
-    if (sourceFieldCount > targetFieldCount) {
+    if (sourceFieldCount != targetFieldCount) {
       throw newValidationError(node,
           RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
     }
@@ -3824,10 +3824,12 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       final RelDataType sourceRowType = getNamespace(source).getRowType();
       final RelDataType logicalSourceRowType =
           getLogicalSourceRowType(sourceRowType, insert);
-      targetRowType =
-          typeFactory.createStructType(
-              targetRowType.getFieldList()
-                  .subList(0, logicalSourceRowType.getFieldCount()));
+      if (conformance.isInsertSubsetColumnsAllowed()) {
+        targetRowType =
+            typeFactory.createStructType(
+                targetRowType.getFieldList()
+                    .subList(0, logicalSourceRowType.getFieldCount()));
+      }
       final SqlValidatorNamespace targetNamespace = getNamespace(insert);
       validateNamespace(targetNamespace, targetRowType);
       return targetRowType;
@@ -4052,7 +4054,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       }
 
       SqlCall rowConstructor = (SqlCall) operand;
-      if (targetRowType.isStruct()
+      if (conformance.isInsertSubsetColumnsAllowed() && targetRowType.isStruct()
           && rowConstructor.operandCount() < targetRowType.getFieldCount()) {
         // Bind an implicit subset of parameters.
         targetRowType =

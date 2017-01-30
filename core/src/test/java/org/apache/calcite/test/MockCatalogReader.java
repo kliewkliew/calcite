@@ -227,6 +227,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
     empNullablesTable.addColumn("SAL", intTypeNull);
     empNullablesTable.addColumn("COMM", intTypeNull);
     empNullablesTable.addColumn("DEPTNO", intTypeNull);
+    empNullablesTable.addColumn("SLACKER", booleanTypeNull);
     registerTable(empNullablesTable);
 
     // Register "EMP_B" table. As "EMP", birth with a "BIRTHDATE" column.

@@ -8097,9 +8097,6 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
 
   @Test public void testInsertSubsetFailNullability() {
     tester.checkQueryFails(
-        "insert into ^empnullables^ values (1)",
-        "Column 'ENAME' has no default value and does not allow NULLs");
-    tester.checkQueryFails(
         "insert into ^empnullables^ (ename) values ('Kevin')",
         "Column 'EMPNO' has no default value and does not allow NULLs");
     final SqlTester pragmaticTester =
@@ -8112,8 +8109,6 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
   }
 
   @Test public void testInsertBindSubsetFailNullability() {
-    tester.checkQueryFails("insert into ^emp^ values (?)",
-        "Column 'ENAME' has no default value and does not allow NULLs");
     tester.checkQueryFails("insert into ^emp^ (ename) values (?)",
         "Column 'EMPNO' has no default value and does not allow NULLs");
     final SqlTester pragmaticTester =
@@ -8126,11 +8121,18 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
 
   @Test public void testInsertSubsetDisallowed() {
     tester.checkQueryFails("insert into ^emp^ values (1)",
-        "Column 'ENAME' has no default value and does not allow NULLs");
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
+    tester.checkQueryFails("insert into ^empnullables^ values (1)",
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
     tester.checkQueryFails("insert into ^emp^ values (1, 'Kevin')",
-        "Column 'JOB' has no default value and does not allow NULLs");
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
+    tester.checkQueryFails("insert into ^empnullables^ values (1, 'Kevin')",
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
+    tester.checkQueryFails("insert into ^emp^ values (?)",
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
+    tester.checkQueryFails("insert into ^empnullables^ values (?, ?)",
+        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
     tester.checkQuery("insert into empnullables (empno, ename) values (1, 'Kevin')");
-    tester.checkQuery("insert into empnullables values (1, 'Kevin')");
   }
 
   @Test public void testInsertBind() {
