@@ -4265,7 +4265,7 @@ public class SqlToRelConverter {
       return typeFactory;
     }
 
-    public InitializerExpressionFactory getDefaultValueFactory() {
+    public InitializerExpressionFactory getInitializerExpressionFactory() {
       return initializerExpressionFactory;
     }
 

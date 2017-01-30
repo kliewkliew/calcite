@@ -483,7 +483,7 @@ abstract class CalciteConnectionImpl
       return connection.createDataContext(ImmutableMap.<String, Object>of());
     }
 
-    public InitializerExpressionFactory getDefaultValueFactory() {
+    public InitializerExpressionFactory getInitializerExpressionFactory() {
       try {
         return connection.unwrap(InitializerExpressionFactory.class);
       } catch (SQLException e) {

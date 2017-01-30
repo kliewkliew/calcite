@@ -82,7 +82,7 @@ public interface SqlRexContext {
    * Returns the factory which supplies default values for INSERT, UPDATE, and
    * NEW.
    */
-  InitializerExpressionFactory getDefaultValueFactory();
+  InitializerExpressionFactory getInitializerExpressionFactory();
 
   /**
    * Returns the validator.

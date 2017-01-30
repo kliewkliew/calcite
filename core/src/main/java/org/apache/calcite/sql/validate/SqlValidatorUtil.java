@@ -40,6 +40,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeUtil;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Litmus;
@@ -193,10 +194,10 @@ public class SqlValidatorUtil {
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
-      NullInitializerExpressionFactory defaultValueFactory,
+      InitializerExpressionFactory initializerExpressionFactory,
       SqlConformance conformance) {
     return new SqlValidatorImpl(opTab, catalogReader, typeFactory,
-        defaultValueFactory, conformance);
+        initializerExpressionFactory, conformance);
   }
 
   /**

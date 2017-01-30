@@ -119,7 +119,7 @@ public interface CalcitePrepare {
 
     DataContext getDataContext();
 
-    InitializerExpressionFactory getDefaultValueFactory();
+    InitializerExpressionFactory getInitializerExpressionFactory();
   }
 
   /** Callback to register Spark as the main engine. */
