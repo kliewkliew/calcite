@@ -78,7 +78,6 @@ import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql2rel.InitializerExpressionFactory;
-import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.BitString;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -4065,6 +4064,16 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       else if (targetRowType.isStruct()
           && rowConstructor.operandCount() != targetRowType.getFieldCount()) {
         return;
+      }
+      for (int i = 0; i < rowConstructor.getOperandList().size(); i++) {
+        final SqlNode colOperand = rowConstructor.getOperandList().get(i);
+        final RelDataTypeField targetField = targetRowType.getFieldList().get(i);
+        colOperand.validate(this, scope);
+        if (!targetField.getType().isNullable()
+            && SqlUtil.isNullLiteral(colOperand, false)) {
+          throw newValidationError(node,
+              RESOURCE.columnNotNullable(targetField.getName()));
+        }
       }
 
       inferUnknownTypes(

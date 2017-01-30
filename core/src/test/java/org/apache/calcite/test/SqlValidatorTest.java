@@ -8095,16 +8095,44 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     pragmaticTester.checkQuery("insert into empnullables (empno, ename) values (1, 'Karl')");
   }
 
-  @Test public void testInsertSubsetFailNullability() {
+  @Test public void testInsertView() {
+    tester.checkQuery("insert into empnullables_20 (ename, empno, comm) values ('Karl', 1, 1)");
+  }
+
+  @Test public void testInsertSubsetView() {
+    final SqlTester pragmaticTester =
+        tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003);
+    pragmaticTester.checkQuery("insert into empnullables_20 values (1, 'Karl')");
+  }
+
+  @Test public void testInsertSubsetViewFailNullability() {
+    tester.checkQueryFails(
+        "insert into ^empnullables_20^ (ename) values ('Jake')",
+        "Column 'EMPNO' has no default value and does not allow NULLs");
+    final SqlTester pragmaticTester =
+        tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003);
+    pragmaticTester.checkQueryFails("insert into ^empnullables_20^ values (1)",
+        "Column 'ENAME' has no default value and does not allow NULLs");
+    pragmaticTester.checkQueryFails(
+        "insert into ^empnullables_20^ (ename) values ('Jake')",
+        "Column 'EMPNO' has no default value and does not allow NULLs");
+  }
+
+  @Test public void testInsertFailNullability() {
     tester.checkQueryFails(
         "insert into ^empnullables^ (ename) values ('Kevin')",
         "Column 'EMPNO' has no default value and does not allow NULLs");
+    tester.checkQueryFails(
+        "insert into empnullables (empno, ename, deptno) ^values (5, null, 5)^",
+        "Column 'ENAME' has no default value and does not allow NULLs");
+  }
+
+  @Test public void testInsertSubsetFailNullability() {
     final SqlTester pragmaticTester =
         tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003);
     pragmaticTester.checkQueryFails("insert into ^empnullables^ values (1)",
         "Column 'ENAME' has no default value and does not allow NULLs");
-    pragmaticTester.checkQueryFails(
-        "insert into ^empnullables^ (ename) values ('Kevin')",
+    pragmaticTester.checkQueryFails("insert into empnullables ^values (null, 'Kevin')^",
         "Column 'EMPNO' has no default value and does not allow NULLs");
   }
 
@@ -8122,17 +8150,26 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
   @Test public void testInsertSubsetDisallowed() {
     tester.checkQueryFails("insert into ^emp^ values (1)",
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
-    tester.checkQueryFails("insert into ^empnullables^ values (1)",
+    tester.checkQueryFails("insert into ^emp^ values (null)",
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
     tester.checkQueryFails("insert into ^emp^ values (1, 'Kevin')",
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
-    tester.checkQueryFails("insert into ^empnullables^ values (1, 'Kevin')",
-        "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
+  }
+
+  @Test public void testInsertBindSubsetDisallowed() {
     tester.checkQueryFails("insert into ^emp^ values (?)",
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(1\\)");
-    tester.checkQueryFails("insert into ^empnullables^ values (?, ?)",
+    tester.checkQueryFails("insert into ^emp^ values (?, ?)",
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
-    tester.checkQuery("insert into empnullables (empno, ename) values (1, 'Kevin')");
+  }
+
+  @Test public void testInsertSubsetViewDisallowed() {
+    tester.checkQueryFails("insert into ^emp_20^ values (1)",
+        "Number of INSERT target columns \\(8\\) does not equal number of source items \\(1\\)");
+    tester.checkQueryFails("insert into ^emp_20^ values (null)",
+        "Number of INSERT target columns \\(8\\) does not equal number of source items \\(1\\)");
+    tester.checkQueryFails("insert into ^emp_20^ values (?, ?)",
+        "Number of INSERT target columns \\(8\\) does not equal number of source items \\(2\\)");
   }
 
   @Test public void testInsertBind() {
