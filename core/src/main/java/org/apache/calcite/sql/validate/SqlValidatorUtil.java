@@ -40,6 +40,8 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeUtil;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.Pair;
@@ -193,20 +195,19 @@ public class SqlValidatorUtil {
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory,
       SqlConformance conformance) {
-    return new SqlValidatorImpl(opTab, catalogReader, typeFactory,
-        conformance);
+    return new SqlValidatorImpl(opTab, catalogReader, typeFactory, conformance);
   }
 
   /**
-   * Factory method for {@link SqlValidator}, with default conformance.
+   * Factory method for {@link SqlValidator}, with default conformance and
+   * default value factory.
    */
   @Deprecated // to be removed before 2.0
   public static SqlValidatorWithHints newValidator(
       SqlOperatorTable opTab,
       SqlValidatorCatalogReader catalogReader,
       RelDataTypeFactory typeFactory) {
-    return newValidator(opTab, catalogReader, typeFactory,
-        SqlConformanceEnum.DEFAULT);
+    return newValidator(opTab, catalogReader, typeFactory, SqlConformanceEnum.DEFAULT);
   }
 
   /**

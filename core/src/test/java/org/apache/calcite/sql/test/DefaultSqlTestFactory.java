@@ -30,6 +30,8 @@ import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql.validate.SqlValidatorWithHints;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.test.MockCatalogReader;
 import org.apache.calcite.test.MockSqlOperatorTable;

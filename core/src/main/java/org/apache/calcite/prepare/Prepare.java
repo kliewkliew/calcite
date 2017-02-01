@@ -39,6 +39,7 @@ import org.apache.calcite.rex.RexExecutorImpl;
 import org.apache.calcite.runtime.Bindable;
 import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.runtime.Typed;
+import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.StarTable;
 import org.apache.calcite.sql.SqlExplain;
 import org.apache.calcite.sql.SqlExplainFormat;
@@ -392,6 +393,19 @@ public abstract class Prepare {
   /** Definition of a table, for the purposes of the validator and planner. */
   public interface PreparingTable
       extends RelOptTable, SqlValidatorTable {
+  }
+
+  /**
+   * Abstract PreparingTable with an implementation for columnHasDefaultValue.
+   */
+  public abstract static class AbstractPreparingTable implements PreparingTable {
+
+    public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
+      if (ordinal >= rowType.getFieldList().size()) {
+        return true;
+      }
+      return !rowType.getFieldList().get(ordinal).getType().isNullable();
+    }
   }
 
   /**

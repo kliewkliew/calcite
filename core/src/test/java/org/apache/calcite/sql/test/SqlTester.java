@@ -24,6 +24,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.test.SqlValidatorTestCase;
 
@@ -84,6 +85,10 @@ public interface SqlTester extends AutoCloseable, SqlValidatorTestCase.Tester {
 
   /** Returns a tester that uses a given operator table. */
   SqlTester withOperatorTable(SqlOperatorTable operatorTable);
+
+  /** Returns a tester that initializes columns from a given factory. */
+  SqlTester withInitializerExpressionFactory(
+      InitializerExpressionFactory initializerExpressionFactory);
 
   /**
    * Tests that a scalar SQL expression returns the expected result and the

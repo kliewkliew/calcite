@@ -34,6 +34,8 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
+
 import org.junit.Test;
 
 import static org.apache.calcite.util.Static.RESOURCE;
