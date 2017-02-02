@@ -17,6 +17,7 @@
 package org.apache.calcite.test;
 
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
@@ -43,6 +44,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rel.type.StructKind;
@@ -73,6 +75,8 @@ import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
+import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Litmus;
@@ -229,6 +233,41 @@ public class MockCatalogReader extends CalciteCatalogReader {
     empNullablesTable.addColumn("DEPTNO", intTypeNull);
     empNullablesTable.addColumn("SLACKER", booleanTypeNull);
     registerTable(empNullablesTable);
+
+    // Register "EMPDEFAULTS" table with default values for some columns.
+    final InitializerExpressionFactory empInitializerExpressionFactory =
+        new NullInitializerExpressionFactory(typeFactory) {
+          @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
+            final RexBuilder rexBuilder = new RexBuilder(typeFactory);
+            switch (iColumn) {
+            case 0:
+              return rexBuilder.makeExactLiteral(
+                  new BigDecimal(123),
+                  typeFactory.createSqlType(SqlTypeName.INTEGER));
+            case 1:
+              return rexBuilder.makeLiteral("Bob");
+            case 2:
+              return rexBuilder.makeExactLiteral(
+                  new BigDecimal(321),
+                  typeFactory.createSqlType(SqlTypeName.INTEGER));
+            default:
+              return rexBuilder.constantNull();
+            }
+          }
+        };
+    final MockTable empDefaultsTable =
+        MockTable.create(this, salesSchema, "EMPDEFAULTS", false, 14,
+            empInitializerExpressionFactory);
+    empDefaultsTable.addColumn("EMPNO", intType, true);
+    empDefaultsTable.addColumn("ENAME", varchar20Type);
+    empDefaultsTable.addColumn("JOB", varchar10TypeNull);
+    empDefaultsTable.addColumn("MGR", intTypeNull);
+    empDefaultsTable.addColumn("HIREDATE", timestampTypeNull);
+    empDefaultsTable.addColumn("SAL", intTypeNull);
+    empDefaultsTable.addColumn("COMM", intTypeNull);
+    empDefaultsTable.addColumn("DEPTNO", intTypeNull);
+    empDefaultsTable.addColumn("SLACKER", booleanTypeNull);
+    registerTable(empDefaultsTable);
 
     // Register "EMP_B" table. As "EMP", birth with a "BIRTHDATE" column.
     final MockTable empBTable =
@@ -615,19 +654,28 @@ public class MockCatalogReader extends CalciteCatalogReader {
     private final Set<String> monotonicColumnSet = Sets.newHashSet();
     private StructKind kind = StructKind.FULLY_QUALIFIED;
     protected final ColumnResolver resolver;
+    private final InitializerExpressionFactory initializerExpressionFactory;
 
     public MockTable(MockCatalogReader catalogReader, String catalogName,
         String schemaName, String name, boolean stream, double rowCount,
         ColumnResolver resolver) {
+      this(catalogReader, catalogName, schemaName, name, stream, rowCount, resolver,
+          new NullInitializerExpressionFactory(new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT)));
+    }
+
+    public MockTable(MockCatalogReader catalogReader, String catalogName,
+        String schemaName, String name, boolean stream, double rowCount,
+        ColumnResolver resolver, InitializerExpressionFactory initializerExpressionFactory) {
       this.catalogReader = catalogReader;
       this.stream = stream;
       this.rowCount = rowCount;
       this.names = ImmutableList.of(catalogName, schemaName, name);
       this.resolver = resolver;
+      this.initializerExpressionFactory = initializerExpressionFactory;
     }
 
     /** Implementation of AbstractModifiableTable. */
-    private class ModifiableTable extends JdbcTest.AbstractModifiableTable {
+    private class ModifiableTable extends JdbcTest.AbstractModifiableTable implements Wrapper {
 
       protected ModifiableTable(String tableName) {
         super(tableName);
@@ -656,6 +704,13 @@ public class MockCatalogReader extends CalciteCatalogReader {
           String tableName, Class clazz) {
         return null;
       }
+
+      @Override public <C> C unwrap(Class<C> aClass) {
+        if (aClass.isInstance(initializerExpressionFactory)) {
+          return aClass.cast(initializerExpressionFactory);
+        }
+        return null;
+      }
     }
 
     /**
@@ -663,7 +718,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
      * CustomColumnResolvingTable.
      */
     private class ModifiableTableWithCustomColumnResolving
-        extends ModifiableTable implements CustomColumnResolvingTable {
+        extends ModifiableTable implements CustomColumnResolvingTable, Wrapper {
 
       protected ModifiableTableWithCustomColumnResolving(String tableName) {
         super(tableName);
@@ -674,13 +729,26 @@ public class MockCatalogReader extends CalciteCatalogReader {
         return resolver.resolveColumn(rowType, typeFactory, names);
       }
 
+      @Override public <C> C unwrap(Class<C> aClass) {
+        if (aClass.isInstance(initializerExpressionFactory)) {
+          return aClass.cast(initializerExpressionFactory);
+        }
+        return null;
+      }
     }
 
     public static MockTable create(MockCatalogReader catalogReader,
         MockSchema schema, String name, boolean stream, double rowCount) {
+      return create(catalogReader, schema, name, stream, rowCount,
+          new NullInitializerExpressionFactory(new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT)));
+    }
+
+    public static MockTable create(MockCatalogReader catalogReader,
+        MockSchema schema, String name, boolean stream, double rowCount,
+        InitializerExpressionFactory initializerExpressionFactory) {
       MockTable table =
           new MockTable(catalogReader, schema.getCatalogName(), schema.name,
-              name, stream, rowCount, null);
+              name, stream, rowCount, null, initializerExpressionFactory);
       schema.addTable(name);
       return table;
     }
@@ -809,7 +877,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
     }
 
     /** Implementation of AbstractModifiableView. */
-    private class ModifiableView extends JdbcTest.AbstractModifiableView {
+    private class ModifiableView extends JdbcTest.AbstractModifiableView implements Wrapper {
 
       @Override public Table getTable() {
         return fromTable.unwrap(Table.class);
@@ -848,6 +916,13 @@ public class MockCatalogReader extends CalciteCatalogReader {
               }
             });
       }
+
+      @Override public <C> C unwrap(Class<C> aClass) {
+        if (table instanceof Wrapper) {
+          return ((Wrapper) table).unwrap(aClass);
+        }
+        return null;
+      }
     }
 
     /**
@@ -855,11 +930,18 @@ public class MockCatalogReader extends CalciteCatalogReader {
      * CustomColumnResolvingTable.
      */
     private class ModifiableViewWithCustomColumnResolving
-      extends ModifiableView implements CustomColumnResolvingTable {
+      extends ModifiableView implements CustomColumnResolvingTable, Wrapper {
 
       @Override public List<Pair<RelDataTypeField, List<String>>> resolveColumn(
           RelDataType rowType, RelDataTypeFactory typeFactory, List<String> names) {
         return resolver.resolveColumn(rowType, typeFactory, names);
+      }
+
+      @Override public <C> C unwrap(Class<C> aClass) {
+        if (table instanceof Wrapper) {
+          return ((Wrapper) table).unwrap(aClass);
+        }
+        return null;
       }
     }
 

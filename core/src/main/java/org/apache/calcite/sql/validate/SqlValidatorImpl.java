@@ -76,7 +76,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.util.SqlVisitor;
-import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.BitString;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -3809,9 +3808,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       if (!field.getType().isNullable()) {
         final RelDataTypeField targetField =
             logicalTargetRowType.getField(field.getName(), true, false);
-        final boolean defaultIsNull =
-            table.columnHasDefaultValue(logicalTargetRowType, field.getIndex());
-        if (targetField == null && defaultIsNull) {
+        final boolean haveDefaultValue =
+            table.columnHasDefaultValue(table.getRowType(), field.getIndex());
+        if (targetField == null && !haveDefaultValue) {
           throw newValidationError(node,
               RESOURCE.columnNotNullable(field.getName()));
         }

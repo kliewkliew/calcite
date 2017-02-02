@@ -411,10 +411,6 @@ public final class Schemas {
         return dataContext;
       }
 
-      public InitializerExpressionFactory getInitializerExpressionFactory() {
-        return new NullInitializerExpressionFactory(typeFactory);
-      }
-
       public CalcitePrepare.SparkHandler spark() {
         final boolean enable = config().spark();
         return CalcitePrepare.Dummy.getSparkHandler(enable);

@@ -45,6 +45,9 @@ public interface SqlValidatorTable {
 
   boolean supportsModality(SqlModality modality);
 
+  /**
+   * Returns whether the ordinal column has a default value.
+   */
   boolean columnHasDefaultValue(RelDataType rowType, int ordinal);
 }
 

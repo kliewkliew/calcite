@@ -482,14 +482,6 @@ abstract class CalciteConnectionImpl
       return connection.createDataContext(ImmutableMap.<String, Object>of());
     }
 
-    public InitializerExpressionFactory getInitializerExpressionFactory() {
-      try {
-        return connection.unwrap(InitializerExpressionFactory.class);
-      } catch (SQLException e) {
-        return new NullInitializerExpressionFactory(getTypeFactory());
-      }
-    }
-
     public CalcitePrepare.SparkHandler spark() {
       final boolean enable = config().spark();
       return CalcitePrepare.Dummy.getSparkHandler(enable);

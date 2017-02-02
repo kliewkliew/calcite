@@ -306,11 +306,6 @@ public class SqlTesterImpl implements SqlTester, AutoCloseable {
     return with("connectionFactory", connectionFactory);
   }
 
-  public SqlTester withInitializerExpressionFactory(
-      InitializerExpressionFactory initializerExpressionFactory) {
-    return with("initializerExpressionFactory", initializerExpressionFactory);
-  }
-
   protected SqlTesterImpl with(final String name2, final Object value) {
     return new SqlTesterImpl(
         new DelegatingSqlTestFactory(factory) {
