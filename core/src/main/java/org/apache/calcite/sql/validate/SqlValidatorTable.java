@@ -44,6 +44,11 @@ public interface SqlValidatorTable {
   SqlAccessType getAllowedAccess();
 
   boolean supportsModality(SqlModality modality);
+
+  /**
+   * Returns whether the ordinal column has a default value.
+   */
+  boolean columnHasDefaultValue(RelDataType rowType, int ordinal);
 }
 
 // End SqlValidatorTable.java

@@ -46,9 +46,12 @@ import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.TranslatableTable;
+import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.SqlAccessType;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlModality;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
+import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
@@ -65,7 +68,7 @@ import java.util.Set;
 /**
  * Implementation of {@link org.apache.calcite.plan.RelOptTable}.
  */
-public class RelOptTableImpl implements Prepare.PreparingTable {
+public class RelOptTableImpl extends Prepare.AbstractPreparingTable {
   private final RelOptSchema schema;
   private final RelDataType rowType;
   private final Table table;
@@ -302,6 +305,15 @@ public class RelOptTableImpl implements Prepare.PreparingTable {
     default:
       return !(table instanceof StreamableTable);
     }
+  }
+
+  @Override public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
+    if (table instanceof Wrapper) {
+      return ((Wrapper) table).unwrap(InitializerExpressionFactory.class)
+          .newColumnDefaultValue(this, ordinal)
+          .getType().getSqlTypeName().equals(SqlTypeName.NULL);
+    }
+    return super.columnHasDefaultValue(rowType, ordinal);
   }
 
   public List<String> getQualifiedName() {
