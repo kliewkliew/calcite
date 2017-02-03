@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -8066,6 +8065,9 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
   }
 
   @Test public void testInsert() {
+    tester.checkQuery("insert into empnullables (empno, ename) values (1, 'Ambrosia')");
+    tester.checkQuery("insert into empnullables (empno, ename)\n"
+        + "select 1, 'Ardy' from (values 'a')");
     final String sql = "insert into emp\n"
         + "values (1, 'nom', 'job', 0, timestamp '1970-01-01 00:00:00', 1, 1,\n"
         + "  1, false)";
@@ -8076,6 +8078,18 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         + "  1, 1, 1, false\n"
         + "from (values 'a')";
     tester.checkQuery(sql2);
+    tester.checkQuery(
+        "insert into empnullables (ename, empno, deptno) values ('Pat', 1, null)");
+
+    final String sql3 = "insert into empnullables (\n"
+        + "  empno, ename, job, hiredate)\n"
+        + "values (1, 'Jim', 'Baker', timestamp '1970-01-01 00:00:00')";
+    tester.checkQuery(sql3);
+
+    tester.checkQuery(
+        "insert into empnullables (empno, ename) select 1, 'b' from (values 'a')");
+
+    tester.checkQuery("insert into empnullables (empno, ename) values (1, 'Karl')");
   }
 
   @Test public void testInsertSubset() {
@@ -8084,16 +8098,9 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     final String sql1 = "insert into empnullables\n"
         + "values (1, 'nom', 'job', 0, timestamp '1970-01-01 00:00:00')";
     pragmaticTester.checkQuery(sql1);
-
-    final String sql2 = "insert into empnullables (\n"
-        + "  empno, ename, job, hiredate)\n"
-        + "values (1, 'Jim', 'Baker', timestamp '1970-01-01 00:00:00')";
+    final String sql2 = "insert into empnullables\n"
+        + "values (1, 'nom', null, 0, null)";
     pragmaticTester.checkQuery(sql2);
-
-    pragmaticTester.checkQuery(
-        "insert into empnullables (empno, ename) select 1, 'b' from (values 'a')");
-
-    pragmaticTester.checkQuery("insert into empnullables (empno, ename) values (1, 'Karl')");
   }
 
   @Test public void testInsertView() {
@@ -8126,8 +8133,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
 
     // SELECT
     sql("insert into empnullables (ename, empno) select ?, ? from (values (1))")
-        .ok()
-        .bindType("RecordType(VARCHAR(20) ?0, INTEGER ?1)");
+        .ok().bindType("RecordType(VARCHAR(20) ?0, INTEGER ?1)");
 
     // WITH
     final String sql3 = "insert into empnullables (ename, empno)\n"

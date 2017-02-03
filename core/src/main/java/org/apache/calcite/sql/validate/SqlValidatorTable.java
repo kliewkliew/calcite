@@ -49,6 +49,11 @@ public interface SqlValidatorTable {
    * Returns whether the ordinal column has a default value.
    */
   boolean columnHasDefaultValue(RelDataType rowType, int ordinal);
+
+  /**
+   * Finds an interface implemented by this table.
+   */
+  <T> T unwrap(Class<T> clazz);
 }
 
 // End SqlValidatorTable.java

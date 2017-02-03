@@ -2601,9 +2601,9 @@ LogicalProject(DEPTNO=[$0], B=[>($1, $2)])
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testInsertSubset">
+    <TestCase name="testInsert">
         <Resource name="sql">
-            <![CDATA[insert into emp (deptno, empno, ename) values (10, 150, 'Fred')]]>
+            <![CDATA[insert into empnullables (deptno, empno, ename) values (10, 150, 'Fred')]]>
         </Resource>
         <Resource name="plan">
             <![CDATA[
@@ -2613,9 +2613,9 @@ LogicalTableModify(table=[[CATALOG, SALES, EMPNULLABLES]], operation=[INSERT], f
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testInsertImplicitSubset">
+    <TestCase name="testInsertSubset">
         <Resource name="sql">
-            <![CDATA[insert into emp (deptno, empno, ename) values (10, 150, 'Fred')]]>
+            <![CDATA[insert into empnullables values (10, 150, 'Fred')]]>
         </Resource>
         <Resource name="plan">
             <![CDATA[
@@ -2625,9 +2625,9 @@ LogicalTableModify(table=[[CATALOG, SALES, EMPNULLABLES]], operation=[INSERT], f
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testInsertBindSubset">
+    <TestCase name="testInsertBind">
         <Resource name="sql">
-            <![CDATA[insert into emp (deptno, empno, ename) values (10, 150, 'Fred')]]>
+            <![CDATA[insert into empnullables (deptno, empno, ename) values (?, ?, ?)]]>
         </Resource>
         <Resource name="plan">
             <![CDATA[
@@ -2638,9 +2638,9 @@ LogicalTableModify(table=[[CATALOG, SALES, EMPNULLABLES]], operation=[INSERT], f
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testInsertBindImplicitSubset">
+    <TestCase name="testInsertBindSubset">
         <Resource name="sql">
-            <![CDATA[insert into emp (deptno, empno, ename) values (10, 150, 'Fred')]]>
+            <![CDATA[insert into empnullables values (?, ?, ?)]]>
         </Resource>
         <Resource name="plan">
             <![CDATA[
@@ -2667,15 +2667,79 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
     </TestCase>
     <TestCase name="testInsertView">
         <Resource name="sql">
-            <![CDATA[insert into emp_20 (empno, ename) values (150, 'Fred')]]>
+            <![CDATA[insert into empnullables_20 (empno, ename) values (150, 'Fred')]]>
         </Resource>
         <Resource name="plan">
             <![CDATA[
-LogicalTableModify(table=[[CATALOG, SALES, EMP]], operation=[INSERT], flattened=[true])
+LogicalTableModify(table=[[CATALOG, SALES, EMPNULLABLES]], operation=[INSERT], flattened=[true])
   LogicalFilter(condition=[>($5, 1000)])
     LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[20], SLACKER=[$7])
-      LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[null], HIREDATE=[$3], SAL=[$4], COMM=[$5], SLACKER=[$6])
-        LogicalValues(tuples=[[{ 150, 'Fred', 'job', 1970-01-01 00:00:00, 1, 1, false }]])
+      LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[null], COMM=[null], SLACKER=[null])
+        LogicalValues(tuples=[[{ 150, 'Fred' }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testInsertSubsetView">
+        <Resource name="sql">
+            <![CDATA[insert into empnullables_20 (empno, ename) values (150, 'Fred')]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPNULLABLES]], operation=[INSERT], flattened=[true])
+  LogicalFilter(condition=[>($5, 1000)])
+    LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[20], SLACKER=[$7])
+      LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[null], COMM=[null], SLACKER=[null])
+        LogicalValues(tuples=[[{ 10, 'Fred' }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testInsertWithCustomInitializerExpressionFactory">
+        <Resource name="sql">
+            <![CDATA[insert into empdefaults (deptno) values (300)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[INSERT], flattened=[true])
+  LogicalProject(EMPNO=[123], ENAME=['Bob'], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[555], COMM=[null], DEPTNO=[$0], SLACKER=[null])
+    LogicalValues(tuples=[[{ 300 }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testInsertSubsetWithCustomInitializerExpressionFactory">
+        <Resource name="sql">
+            <![CDATA[insert into empdefaults values (100)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[INSERT], flattened=[true])
+  LogicalProject(EMPNO=[$0], ENAME=['Bob'], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[555], COMM=[null], DEPTNO=[null], SLACKER=[null])
+    LogicalValues(tuples=[[{ 100 }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testInsertBindWithCustomInitializerExpressionFactory">
+        <Resource name="sql">
+            <![CDATA[nsert into empdefaults (deptno) values (?)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[INSERT], flattened=[true])
+  LogicalProject(EMPNO=[123], ENAME=['Bob'], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[555], COMM=[null], DEPTNO=[$0], SLACKER=[null])
+    LogicalProject(EXPR$0=[?0])
+      LogicalValues(tuples=[[{ 0 }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testInsertBindSubsetWithCustomInitializerExpressionFactory">
+        <Resource name="sql">
+            <![CDATA[insert into empdefaults values (?)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[INSERT], flattened=[true])
+  LogicalProject(EMPNO=[$0], ENAME=['Bob'], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[555], COMM=[null], DEPTNO=[null], SLACKER=[null])
+    LogicalProject(EXPR$0=[?0])
+      LogicalValues(tuples=[[{ 0 }]])
 ]]>
         </Resource>
     </TestCase>

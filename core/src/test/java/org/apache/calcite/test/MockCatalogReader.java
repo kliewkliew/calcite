@@ -246,9 +246,9 @@ public class MockCatalogReader extends CalciteCatalogReader {
                   typeFactory.createSqlType(SqlTypeName.INTEGER));
             case 1:
               return rexBuilder.makeLiteral("Bob");
-            case 2:
+            case 5:
               return rexBuilder.makeExactLiteral(
-                  new BigDecimal(321),
+                  new BigDecimal(555),
                   typeFactory.createSqlType(SqlTypeName.INTEGER));
             default:
               return rexBuilder.constantNull();
@@ -446,7 +446,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
     registerTable(emp20View);
 
     MockTable empNullables20View = new MockViewTable(this, salesSchema.getCatalogName(),
-        salesSchema.name, "EMPNULLABLES_20", false, 600, empTable,
+        salesSchema.name, "EMPNULLABLES_20", false, 600, empNullablesTable,
         ImmutableIntList.of(0, 1, 2, 3, 4, 5, 6, 8), null) {
 
       @Override public RexNode getConstraint(RexBuilder rexBuilder,

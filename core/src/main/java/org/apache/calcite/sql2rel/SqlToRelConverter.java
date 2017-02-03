@@ -3061,9 +3061,10 @@ public class SqlToRelConverter {
             Collections.<String>nCopies(targetFields.size(), null));
 
     final SqlValidatorNamespace targetNamespace = validator.getNamespace(call);
-    final SqlValidatorTable table = targetNamespace.getTable();
+    final SqlValidatorTable validatorTable = targetNamespace.getTable();
+    final Table table = validatorTable.unwrap(Table.class);
     final InitializerExpressionFactory initializerExpressionFactory =
-        table instanceof Wrapper ? // FIXME: wrong table type
+        table != null && table instanceof Wrapper ?
             ((Wrapper) table).unwrap(InitializerExpressionFactory.class)
             : new NullInitializerExpressionFactory(typeFactory);
 

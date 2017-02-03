@@ -307,15 +307,6 @@ public class RelOptTableImpl extends Prepare.AbstractPreparingTable {
     }
   }
 
-  @Override public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
-    if (table instanceof Wrapper) {
-      return ((Wrapper) table).unwrap(InitializerExpressionFactory.class)
-          .newColumnDefaultValue(this, ordinal)
-          .getType().getSqlTypeName().equals(SqlTypeName.NULL);
-    }
-    return super.columnHasDefaultValue(rowType, ordinal);
-  }
-
   public List<String> getQualifiedName() {
     return names;
   }
