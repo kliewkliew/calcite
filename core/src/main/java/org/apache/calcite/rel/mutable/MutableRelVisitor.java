@@ -14,26 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.sql.fun;
+package org.apache.calcite.rel.mutable;
 
-import org.apache.calcite.sql.SqlFunctionCategory;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.type.OperandTypes;
-import org.apache.calcite.sql.type.ReturnTypes;
+/** Visitor over {@link MutableRel}. */
+public class MutableRelVisitor {
+  private MutableRel root;
 
-/**
- * The {@code GROUPING} function.
- *
- * <p>This function is defined in the SQL standard.
- * {@code GROUPING_ID} is a non-standard synonym.
- *
- * <p>Some examples are in {@code agg.iq}.
- */
-class SqlGroupingFunction extends SqlAbstractGroupFunction {
-  public SqlGroupingFunction(String name) {
-    super(name, SqlKind.GROUPING, ReturnTypes.BIGINT, null,
-        OperandTypes.ONE_OR_MORE, SqlFunctionCategory.SYSTEM);
+  public void visit(MutableRel node) {
+    node.childrenAccept(this);
+  }
+
+  public MutableRel go(MutableRel p) {
+    this.root = p;
+    visit(p);
+    return root;
   }
 }
 
-// End SqlGroupingFunction.java
+// End MutableRelVisitor.java

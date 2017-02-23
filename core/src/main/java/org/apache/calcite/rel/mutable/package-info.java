@@ -14,26 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.sql.fun;
-
-import org.apache.calcite.sql.SqlFunctionCategory;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.type.OperandTypes;
-import org.apache.calcite.sql.type.ReturnTypes;
 
 /**
- * The {@code GROUPING} function.
+ * Defines mutable relational expressions.
  *
- * <p>This function is defined in the SQL standard.
- * {@code GROUPING_ID} is a non-standard synonym.
+ * <h2>Related packages and classes</h2>
+ * <ul>
  *
- * <p>Some examples are in {@code agg.iq}.
+ * <li>Package <code>
+ * <a href="../core/package-summary.html">org.apache.calcite.rel.core</a></code>
+ * contains core relational expressions
+ *
+ * <li>Package <code>
+ * <a href="../package-summary.html">org.apache.calcite.rex</a></code>
+ * defines the relational expression API
+ *
+ * </ul>
  */
-class SqlGroupingFunction extends SqlAbstractGroupFunction {
-  public SqlGroupingFunction(String name) {
-    super(name, SqlKind.GROUPING, ReturnTypes.BIGINT, null,
-        OperandTypes.ONE_OR_MORE, SqlFunctionCategory.SYSTEM);
-  }
-}
+@PackageMarker
+package org.apache.calcite.rel.mutable;
 
-// End SqlGroupingFunction.java
+import org.apache.calcite.avatica.util.PackageMarker;
+
+// End package-info.java

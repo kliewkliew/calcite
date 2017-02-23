@@ -14,26 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.sql.fun;
+package org.apache.calcite.rel.mutable;
 
-import org.apache.calcite.sql.SqlFunctionCategory;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.type.OperandTypes;
-import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.rel.type.RelDataType;
 
-/**
- * The {@code GROUPING} function.
- *
- * <p>This function is defined in the SQL standard.
- * {@code GROUPING_ID} is a non-standard synonym.
- *
- * <p>Some examples are in {@code agg.iq}.
- */
-class SqlGroupingFunction extends SqlAbstractGroupFunction {
-  public SqlGroupingFunction(String name) {
-    super(name, SqlKind.GROUPING, ReturnTypes.BIGINT, null,
-        OperandTypes.ONE_OR_MORE, SqlFunctionCategory.SYSTEM);
+/** Implementation of {@link MutableRel} whose only purpose is to have a
+ * child. Used as the root of a tree. */
+public class Holder extends MutableSingleRel {
+  private Holder(RelDataType rowType, MutableRel input) {
+    super(MutableRelType.HOLDER, rowType, input);
+  }
+
+  /**
+   * Creates a Holder.
+   *
+   * @param input Input relational expression
+   */
+  public static Holder of(MutableRel input) {
+    return new Holder(input.rowType, input);
+  }
+
+  @Override public StringBuilder digest(StringBuilder buf) {
+    return buf.append("Holder");
+  }
+
+  @Override public MutableRel clone() {
+    return Holder.of(input.clone());
   }
 }
 
-// End SqlGroupingFunction.java
+// End Holder.java
