@@ -973,21 +973,33 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private SqlValidatorNamespace getNamespace(SqlNode node,
       SqlValidatorScope scope) {
-    if (node instanceof SqlIdentifier && scope instanceof DelegatingScope) {
+    if (node instanceof SqlIdentifier) {
       final SqlIdentifier id = (SqlIdentifier) node;
-      final SqlValidatorScope parentScope =
-          ((DelegatingScope) scope).getParent();
-      if (id.isSimple()) {
-        final SqlNameMatcher nameMatcher = catalogReader.nameMatcher();
-        final SqlValidatorScope.ResolvedImpl resolved =
-            new SqlValidatorScope.ResolvedImpl();
-        parentScope.resolve(id.names, nameMatcher, false, resolved);
-        if (resolved.count() == 1) {
-          return resolved.only().namespace;
-        }
+      final DelegatingScope idScope = (DelegatingScope) ((DelegatingScope) scope).getParent();
+      return getNamespace(id, idScope);
+    } else if (node instanceof SqlCall) {
+      // Handle extended identifiers.
+      final SqlCall sqlCall = (SqlCall) node;
+      if (sqlCall.getOperator().getKind().equals(SqlKind.EXTEND)) {
+        final SqlIdentifier id = (SqlIdentifier) sqlCall.getOperandList().get(0);
+        final DelegatingScope idScope = (DelegatingScope) scope;
+        return getNamespace(id, idScope);
       }
     }
     return getNamespace(node);
+  }
+
+  private SqlValidatorNamespace getNamespace(SqlIdentifier id, DelegatingScope scope) {
+    if (id.isSimple()) {
+      final SqlNameMatcher nameMatcher = catalogReader.nameMatcher();
+      final SqlValidatorScope.ResolvedImpl resolved =
+          new SqlValidatorScope.ResolvedImpl();
+      scope.resolve(id.names, nameMatcher, false, resolved);
+      if (resolved.count() == 1) {
+        return resolved.only().namespace;
+      }
+    }
+    return getNamespace(id);
   }
 
   public SqlValidatorNamespace getNamespace(SqlNode node) {
@@ -2010,6 +2022,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         tableScope = new TableScope(parentScope, node);
       }
       tableScope.addChild(newNs, alias, forceNullable);
+      if (0 != extendList.size()) {
+        return enclosingNode;
+      }
       return newNode;
 
     case LATERAL:

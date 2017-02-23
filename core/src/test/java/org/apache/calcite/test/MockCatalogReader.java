@@ -826,7 +826,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
       this.mapping = mapping;
     }
 
-    /** Implementation of AbstractModifiableView. */
+    /** Implementation of AbstractModifiableView. *///TODO: test ModifiableViewTable
     private class ModifiableView extends JdbcTest.AbstractModifiableView
         implements Wrapper {
       @Override public Table getTable() {
