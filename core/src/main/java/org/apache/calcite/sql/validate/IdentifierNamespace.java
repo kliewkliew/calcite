@@ -19,6 +19,7 @@ package org.apache.calcite.sql.validate;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -201,11 +202,16 @@ public class IdentifierNamespace extends AbstractNamespace {
     if (extendList != null) {
       final List<RelDataTypeField> fields = Lists.newArrayList();
       final Iterator<SqlNode> extendIterator = extendList.iterator();
+      final ExtensibleTable extTable = getTable().unwrap(ExtensibleTable.class);
+      int extendedFieldOffset =
+          extTable == null
+              ? getTable().getRowType().getFieldCount()
+              : extTable.extendedColumnOffset();
       while (extendIterator.hasNext()) {
         SqlIdentifier id = (SqlIdentifier) extendIterator.next();
         SqlDataTypeSpec type = (SqlDataTypeSpec) extendIterator.next();
         fields.add(
-            new RelDataTypeFieldImpl(id.getSimple(), fields.size(),
+            new RelDataTypeFieldImpl(id.getSimple(), extendedFieldOffset++,
                 type.deriveType(validator)));
       }
 

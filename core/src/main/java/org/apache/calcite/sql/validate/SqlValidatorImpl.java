@@ -2022,7 +2022,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         tableScope = new TableScope(parentScope, node);
       }
       tableScope.addChild(newNs, alias, forceNullable);
-      if (0 != extendList.size()) {
+      if (extendList != null && extendList.size() != 0) {
         return enclosingNode;
       }
       return newNode;
