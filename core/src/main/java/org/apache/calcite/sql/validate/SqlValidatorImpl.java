@@ -973,17 +973,20 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
   private SqlValidatorNamespace getNamespace(SqlNode node,
       SqlValidatorScope scope) {
-    if (node instanceof SqlIdentifier) {
+    if (node instanceof SqlIdentifier && scope instanceof DelegatingScope) {
       final SqlIdentifier id = (SqlIdentifier) node;
       final DelegatingScope idScope = (DelegatingScope) ((DelegatingScope) scope).getParent();
       return getNamespace(id, idScope);
     } else if (node instanceof SqlCall) {
       // Handle extended identifiers.
       final SqlCall sqlCall = (SqlCall) node;
-      if (sqlCall.getOperator().getKind().equals(SqlKind.EXTEND)) {
+      final SqlKind sqlKind = sqlCall.getOperator().getKind();
+      if (sqlKind.equals(SqlKind.EXTEND)) {
         final SqlIdentifier id = (SqlIdentifier) sqlCall.getOperandList().get(0);
         final DelegatingScope idScope = (DelegatingScope) scope;
         return getNamespace(id, idScope);
+      } else if (sqlKind.equals(SqlKind.AS)) {
+        return getNamespace(sqlCall.getOperandList().get(0), scope);
       }
     }
     return getNamespace(node);
