@@ -206,7 +206,7 @@ public class IdentifierNamespace extends AbstractNamespace {
       int extendedFieldOffset =
           extTable == null
               ? getTable().getRowType().getFieldCount()
-              : extTable.extendedColumnOffset();
+              : extTable.getExtendedColumnOffset();
       while (extendIterator.hasNext()) {
         SqlIdentifier id = (SqlIdentifier) extendIterator.next();
         SqlDataTypeSpec type = (SqlDataTypeSpec) extendIterator.next();

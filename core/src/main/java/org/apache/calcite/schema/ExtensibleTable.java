@@ -41,7 +41,11 @@ public interface ExtensibleTable extends Table {
    * fields. */
   Table extend(List<RelDataTypeField> fields);
 
-  int extendedColumnOffset();
+  /**
+   * Return the starting offset of the first extended column, which may differ from the field count
+   * when columns are projected.
+   */
+  int getExtendedColumnOffset();
 }
 
 // End ExtensibleTable.java

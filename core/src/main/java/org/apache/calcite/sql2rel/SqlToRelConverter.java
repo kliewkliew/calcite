@@ -2086,7 +2086,9 @@ public class SqlToRelConverter {
       final Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
       final ExtensibleTable extTable = table.unwrap(ExtensibleTable.class);
       int extendedFieldOffset =
-          extTable == null ? table.getRowType().getFieldCount() : extTable.extendedColumnOffset();
+          extTable == null
+              ? table.getRowType().getFieldCount()
+              : extTable.getExtendedColumnOffset();
       while (exColIt.hasNext()) {
         final SqlIdentifier identifier = (SqlIdentifier) exColIt.next();
         final SqlDataTypeSpec type = (SqlDataTypeSpec) exColIt.next();
