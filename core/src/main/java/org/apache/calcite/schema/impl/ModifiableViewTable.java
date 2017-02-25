@@ -128,8 +128,7 @@ public class ModifiableViewTable extends ViewTable
 
     @Override public RexNode newAttributeInitializer(RelDataType type,
         SqlFunction constructor, int iAttribute, List<RexNode> constructorArgs) {
-      throw new UnsupportedOperationException("Unsupported");
-      // TODO: should we do the same as newColumnDefaultValue?
+      throw new UnsupportedOperationException("Not implemented - unknown requirements");
     }
 
     /**

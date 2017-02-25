@@ -1948,6 +1948,13 @@ public class SqlToRelConverter {
       convertIdentifier(bb, (SqlIdentifier) from, null);
       return;
 
+    case EXTEND:
+      call = (SqlCall) from;
+      SqlIdentifier id = (SqlIdentifier) call.getOperandList().get(0);
+      SqlNodeList extendedColumns = (SqlNodeList) call.getOperandList().get(1);
+      convertIdentifier(bb, id, extendedColumns);
+      return;
+
     case JOIN:
       final SqlJoin join = (SqlJoin) from;
       final SqlValidatorScope scope = validator.getJoinScope(from);
@@ -2049,13 +2056,6 @@ public class SqlToRelConverter {
       convertCollectionTable(bb, call2);
       return;
 
-    case EXTEND:
-      call = (SqlCall) from;
-      SqlIdentifier id = (SqlIdentifier) call.getOperandList().get(0);
-      SqlNodeList extendedColumns = (SqlNodeList) call.getOperandList().get(1);
-      convertIdentifier(bb, id, extendedColumns);
-      return;
-
     default:
       throw new AssertionError("not a join operator " + from);
     }
@@ -2074,7 +2074,7 @@ public class SqlToRelConverter {
     }
     final String datasetName =
         datasetStack.isEmpty() ? null : datasetStack.peek();
-    boolean[] usedDataset = {false};
+    final boolean[] usedDataset = {false};
     RelOptTable table =
         SqlValidatorUtil.getRelOptTable(
             fromNamespace,
@@ -2083,7 +2083,7 @@ public class SqlToRelConverter {
             usedDataset);
     if (extendedColumns != null && extendedColumns.size() != 0) {
       final ImmutableList.Builder<RelDataTypeField> extendedFields = ImmutableList.builder();
-      Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
+      final Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
       final ExtensibleTable extTable = table.unwrap(ExtensibleTable.class);
       int extendedFieldOffset =
           extTable == null ? table.getRowType().getFieldCount() : extTable.extendedColumnOffset();

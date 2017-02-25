@@ -86,12 +86,7 @@ public class ViewTable
    */
   public static ViewTableMacro viewMacro(SchemaPlus schema, String viewSql,
       List<String> schemaPath, List<String> viewPath, Boolean modifiable) {
-    return viewMacro(CalciteSchema.from(schema), viewSql, schemaPath,
-        viewPath, modifiable);
-  }
-  public static ViewTableMacro viewMacro(CalciteSchema schema, String viewSql,
-      List<String> schemaPath, List<String> viewPath, Boolean modifiable) {
-    return new ViewTableMacro(schema, viewSql, schemaPath,
+    return new ViewTableMacro(CalciteSchema.from(schema), viewSql, schemaPath,
         viewPath, modifiable);
   }
 
