@@ -88,7 +88,7 @@ public class ModifiableViewTable extends ViewTable
   }
 
   /**
-   * Initialize columns based on the constraint.
+   * Initialize columns based on the view constraint.
    */
   private class ModifiableViewTableInitializerExpressionFactory extends
       NullInitializerExpressionFactory {
@@ -132,7 +132,7 @@ public class ModifiableViewTable extends ViewTable
     }
 
     /**
-     * Visit a row constraint to find the column constraint corresponding to a column ordinal.
+     * Visit a view constraint to find the column constraint corresponding to a column ordinal.
      */
     private class ConstraintVisitor extends RexVisitorImpl<RexNode> {
       private final Integer ordinal;
