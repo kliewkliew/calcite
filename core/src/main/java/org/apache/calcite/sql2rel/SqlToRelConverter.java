@@ -68,6 +68,7 @@ import org.apache.calcite.rel.stream.LogicalDelta;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -83,6 +84,7 @@ import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexWindowBound;
+import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.ModifiableView;
 import org.apache.calcite.schema.Table;
@@ -185,6 +187,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1942,31 +1945,14 @@ public class SqlToRelConverter {
       return;
 
     case IDENTIFIER:
-      final SqlValidatorNamespace fromNamespace =
-          validator.getNamespace(from).resolve();
-      if (fromNamespace.getNode() != null) {
-        convertFrom(bb, fromNamespace.getNode());
-        return;
-      }
-      final String datasetName =
-          datasetStack.isEmpty() ? null : datasetStack.peek();
-      boolean[] usedDataset = {false};
-      RelOptTable table =
-          SqlValidatorUtil.getRelOptTable(
-              fromNamespace,
-              catalogReader,
-              datasetName,
-              usedDataset);
-      final RelNode tableRel;
-      if (config.isConvertTableAccess()) {
-        tableRel = toRel(table);
-      } else {
-        tableRel = LogicalTableScan.create(cluster, table);
-      }
-      bb.setRoot(tableRel, true);
-      if (usedDataset[0]) {
-        bb.setDataset(datasetName);
-      }
+      convertIdentifier(bb, (SqlIdentifier) from, null);
+      return;
+
+    case EXTEND:
+      call = (SqlCall) from;
+      SqlIdentifier id = (SqlIdentifier) call.getOperandList().get(0);
+      SqlNodeList extendedColumns = (SqlNodeList) call.getOperandList().get(1);
+      convertIdentifier(bb, id, extendedColumns);
       return;
 
     case JOIN:
@@ -2072,6 +2058,59 @@ public class SqlToRelConverter {
 
     default:
       throw new AssertionError("not a join operator " + from);
+    }
+  }
+
+  private void convertIdentifier(
+      Blackboard bb,
+      SqlIdentifier id,
+      SqlNodeList extendedColumns
+  ) {
+    final SqlValidatorNamespace fromNamespace =
+        validator.getNamespace(id).resolve();
+    if (fromNamespace.getNode() != null) {
+      convertFrom(bb, fromNamespace.getNode());
+      return;
+    }
+    final String datasetName =
+        datasetStack.isEmpty() ? null : datasetStack.peek();
+    final boolean[] usedDataset = {false};
+    RelOptTable table =
+        SqlValidatorUtil.getRelOptTable(
+            fromNamespace,
+            catalogReader,
+            datasetName,
+            usedDataset);
+    if (extendedColumns != null && extendedColumns.size() != 0) {
+      final ImmutableList.Builder<RelDataTypeField> extendedFields = ImmutableList.builder();
+      final Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
+      final ExtensibleTable extTable = table.unwrap(ExtensibleTable.class);
+      int extendedFieldOffset =
+          extTable == null
+              ? table.getRowType().getFieldCount()
+              : extTable.getExtendedColumnOffset();
+      while (exColIt.hasNext()) {
+        final SqlIdentifier identifier = (SqlIdentifier) exColIt.next();
+        final SqlDataTypeSpec type = (SqlDataTypeSpec) exColIt.next();
+        final RelDataTypeField field = new RelDataTypeFieldImpl(
+            identifier.names.get(0), // TODO: more names?
+            extendedFieldOffset++,
+            type.deriveType(typeFactory)
+        );
+        extendedFields.add(field);
+      }
+
+      table = table.extend(extendedFields.build());
+    }
+    final RelNode tableRel;
+    if (config.isConvertTableAccess()) {
+      tableRel = toRel(table);
+    } else {
+      tableRel = LogicalTableScan.create(cluster, table);
+    }
+    bb.setRoot(tableRel, true);
+    if (usedDataset[0]) {
+      bb.setDataset(datasetName);
     }
   }
 

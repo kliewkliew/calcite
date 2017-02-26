@@ -30,18 +30,12 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelProtoDataType;
-import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.FunctionParameter;
-import org.apache.calcite.schema.ModifiableView;
-import org.apache.calcite.schema.Path;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
-import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.schema.TranslatableTable;
-import org.apache.calcite.util.ImmutableIntList;
 
 import com.google.common.collect.ImmutableList;
 
@@ -176,48 +170,11 @@ public class ViewTable
         return new ModifiableViewTable(elementType,
             RelDataTypeImpl.proto(parsed.rowType), viewSql, schemaPath1, viewPath,
             parsed.table, Schemas.path(schema.root(), parsed.tablePath),
-            parsed.constraint, parsed.columnMapping);
+            parsed.constraint, parsed.columnMapping, parsed.typeFactory);
       } else {
         return new ViewTable(elementType,
             RelDataTypeImpl.proto(parsed.rowType), viewSql, schemaPath1, viewPath);
       }
-    }
-  }
-
-  /** Extension to {@link ViewTable} that is modifiable. */
-  static class ModifiableViewTable extends ViewTable
-      implements ModifiableView {
-    private final Table table;
-    private final Path tablePath;
-    private final RexNode constraint;
-    private final ImmutableIntList columnMapping;
-
-    public ModifiableViewTable(Type elementType, RelProtoDataType rowType,
-        String viewSql, List<String> schemaPath, List<String> viewPath,
-        Table table, Path tablePath, RexNode constraint,
-        ImmutableIntList columnMapping) {
-      super(elementType, rowType, viewSql, schemaPath, viewPath);
-      this.table = table;
-      this.tablePath = tablePath;
-      this.constraint = constraint;
-      this.columnMapping = columnMapping;
-    }
-
-    public RexNode getConstraint(RexBuilder rexBuilder,
-        RelDataType tableRowType) {
-      return rexBuilder.copy(constraint);
-    }
-
-    public ImmutableIntList getColumnMapping() {
-      return columnMapping;
-    }
-
-    public Table getTable() {
-      return table;
-    }
-
-    public Path getTablePath() {
-      return tablePath;
     }
   }
 }

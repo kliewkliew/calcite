@@ -1602,9 +1602,9 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertViewWithCustomColumnResolving() {
-    final String sql = "insert into struct.t_10 (f0.c0, f1.c2, c1, k0,\n"
+    final String sql = "insert into struct.t_10 (f1.c2, c1, k0,\n"
         + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
-        + "values (?, ?, ?, ?, ?, ?, ?, ?)";
+        + "values (?, ?, ?, ?, ?, ?, ?)";
     sql(sql).ok();
   }
 

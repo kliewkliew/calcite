@@ -975,19 +975,35 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       SqlValidatorScope scope) {
     if (node instanceof SqlIdentifier && scope instanceof DelegatingScope) {
       final SqlIdentifier id = (SqlIdentifier) node;
-      final SqlValidatorScope parentScope =
-          ((DelegatingScope) scope).getParent();
-      if (id.isSimple()) {
-        final SqlNameMatcher nameMatcher = catalogReader.nameMatcher();
-        final SqlValidatorScope.ResolvedImpl resolved =
-            new SqlValidatorScope.ResolvedImpl();
-        parentScope.resolve(id.names, nameMatcher, false, resolved);
-        if (resolved.count() == 1) {
-          return resolved.only().namespace;
-        }
+      final DelegatingScope idScope = (DelegatingScope) ((DelegatingScope) scope).getParent();
+      return getNamespace(id, idScope);
+    } else if (node instanceof SqlCall) {
+      // Handle extended identifiers.
+      final SqlCall sqlCall = (SqlCall) node;
+      final SqlKind sqlKind = sqlCall.getOperator().getKind();
+      if (sqlKind.equals(SqlKind.EXTEND)) {
+        final SqlIdentifier id = (SqlIdentifier) sqlCall.getOperandList().get(0);
+        final DelegatingScope idScope = (DelegatingScope) scope;
+        return getNamespace(id, idScope);
+      } else if (sqlKind.equals(SqlKind.AS)
+          && ((SqlCall) node).getOperandList().get(0).getKind().equals(SqlKind.EXTEND)) {
+        return getNamespace(sqlCall.getOperandList().get(0), scope);
       }
     }
     return getNamespace(node);
+  }
+
+  private SqlValidatorNamespace getNamespace(SqlIdentifier id, DelegatingScope scope) {
+    if (id.isSimple()) {
+      final SqlNameMatcher nameMatcher = catalogReader.nameMatcher();
+      final SqlValidatorScope.ResolvedImpl resolved =
+          new SqlValidatorScope.ResolvedImpl();
+      scope.resolve(id.names, nameMatcher, false, resolved);
+      if (resolved.count() == 1) {
+        return resolved.only().namespace;
+      }
+    }
+    return getNamespace(id);
   }
 
   public SqlValidatorNamespace getNamespace(SqlNode node) {
@@ -2010,6 +2026,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         tableScope = new TableScope(parentScope, node);
       }
       tableScope.addChild(newNs, alias, forceNullable);
+      if (extendList != null && extendList.size() != 0) {
+        return enclosingNode;
+      }
       return newNode;
 
     case LATERAL:
