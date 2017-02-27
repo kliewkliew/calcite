@@ -1602,6 +1602,18 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 
+  @Test public void testInsertBindModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW (empno, job)\n"
+        + "values (?, ?)";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertBindSubsetModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW \n"
+        + "values (?, ?)";
+    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+  }
+
   @Test public void testInsertWithCustomColumnResolving() {
     final String sql = "insert into struct.t values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     sql(sql).ok();
