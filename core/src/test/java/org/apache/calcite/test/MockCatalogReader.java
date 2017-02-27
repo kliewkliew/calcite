@@ -51,6 +51,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.schema.CustomColumnResolvingTable;
+import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.schema.Path;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -85,6 +86,7 @@ import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -187,8 +189,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
     // Register "EMPDEFAULTS" table with default values for some columns.
     final InitializerExpressionFactory empInitializerExpressionFactory =
         new NullInitializerExpressionFactory(typeFactory) {
-          @Override public RexNode newColumnDefaultValue(RelOptTable table,
-              int iColumn) {
+          @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
             switch (iColumn) {
             case 0:
               return rexBuilder.makeExactLiteral(new BigDecimal(123),
@@ -471,12 +472,8 @@ public class MockCatalogReader extends CalciteCatalogReader {
     registerTable(structNullableTypeTable);
 
     // Register "STRUCT.T_10" view.
-    // Same columns as "STRUCT.T",
-    // but "F0.C0" is set to 10 by default,
-    // which is the equivalent of:
-    //   SELECT *
-    //   FROM T
-    //   WHERE F0.C0 = 10
+    // Same columns as "STRUCT.T", but "F0.C0" is set to 10 by default, which is the equivalent of:
+    //   SELECT * FROM T WHERE F0.C0 = 10
     // This table uses MockViewTable which does not populate the constrained columns with default
     // values on INSERT.
     final ImmutableIntList m1 = ImmutableIntList.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
@@ -501,32 +498,24 @@ public class MockCatalogReader extends CalciteCatalogReader {
     }
     registerTable(struct10View);
 
-    // Same as "STRUCT.T_10" except it uses ModifiableViewTable which populates constrained columns
-    // with default values on INSERT.
-    List<String> struct10ModifiableViewNames = ImmutableList.of(
+    // Same as "STRUCT.T_10"and "EMP_20" except it uses ModifiableViewTable which populates
+    // constrained columns with default values on INSERT.
+    List<String> structModifiableViewNames = ImmutableList.of(
         structTypeSchema.getCatalogName(), structTypeSchema.name, "T_MODIFIABLEVIEW");
-    TableMacro struct10ModifiableViewMacro = ViewTable.viewMacro(
-        rootSchema.plus(),
-        "select * from T where F0.C0 = 10",
-        struct10ModifiableViewNames.subList(0, 2),
-        ImmutableList.of(struct10ModifiableViewNames.get(2)),
-        true);
-    TranslatableTable struct10ModifiableView =
-        struct10ModifiableViewMacro.apply(ImmutableList.of());
-    registerTable(struct10ModifiableViewNames, struct10ModifiableView);
+    TableMacro structModifiableViewMacro = ViewTable.viewMacro(rootSchema.plus(),
+        "select * from T where F0.C0 = 10", structModifiableViewNames.subList(0, 2),
+        ImmutableList.of(structModifiableViewNames.get(2)), true);
+    TranslatableTable structModifiableView = structModifiableViewMacro.apply(ImmutableList.of());
+    registerTable(structModifiableViewNames, structModifiableView);
 
-    List<String> emp20ModifiableViewNames = ImmutableList.of(
+    List<String> empModifiableViewNames = ImmutableList.of(
         salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW");
-    TableMacro emp20ModifiableViewMacro = ViewTable.viewMacro(
-        rootSchema.plus(),
-        "select EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, SLACKER"
-            + " from EMPDEFAULTS where DEPTNO = 20",
-        emp20ModifiableViewNames.subList(0, 2),
-        ImmutableList.of(emp20ModifiableViewNames.get(2)),
-        true);
-    TranslatableTable emp20ModifiableView =
-        emp20ModifiableViewMacro.apply(ImmutableList.of());
-    registerTable(emp20ModifiableViewNames, emp20ModifiableView);
+    TableMacro empModifiableViewMacro = ViewTable.viewMacro(rootSchema.plus(),
+        "select EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, SLACKER from EMPDEFAULTS"
+            + " where DEPTNO = 20", empModifiableViewNames.subList(0, 2),
+        ImmutableList.of(empModifiableViewNames.get(2)), true);
+    TranslatableTable empModifiableView = empModifiableViewMacro.apply(ImmutableList.of());
+    registerTable(empModifiableViewNames, empModifiableView);
 
     return this;
   }
@@ -644,17 +633,23 @@ public class MockCatalogReader extends CalciteCatalogReader {
         String schemaName, String name, boolean stream, double rowCount,
         ColumnResolver resolver,
         InitializerExpressionFactory initializerFactory) {
+      this(catalogReader, ImmutableList.of(catalogName, schemaName, name), stream, rowCount,
+          resolver, initializerFactory);
+    }
+
+    private MockTable(MockCatalogReader catalogReader, List<String> names, boolean stream,
+        double rowCount, ColumnResolver resolver, InitializerExpressionFactory initializerFactory) {
       this.catalogReader = catalogReader;
       this.stream = stream;
       this.rowCount = rowCount;
-      this.names = ImmutableList.of(catalogName, schemaName, name);
+      this.names = names;
       this.resolver = resolver;
       this.initializerFactory = initializerFactory;
     }
 
     /** Implementation of AbstractModifiableTable. */
     private class ModifiableTable extends JdbcTest.AbstractModifiableTable
-        implements Wrapper {
+        implements ExtensibleTable, Wrapper {
       protected ModifiableTable(String tableName) {
         super(tableName);
       }
@@ -686,9 +681,35 @@ public class MockCatalogReader extends CalciteCatalogReader {
       @Override public <C> C unwrap(Class<C> aClass) {
         if (aClass.isInstance(initializerFactory)) {
           return aClass.cast(initializerFactory);
+        } else if (aClass.isInstance(MockTable.this)) {
+          return aClass.cast(MockTable.this);
         }
         return null;
       }
+
+      @Override public Table extend(final List<RelDataTypeField> fields) {
+        return new ModifiableTable(Util.last(names)) {
+          @Override public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+            ImmutableList<RelDataTypeField> allFields = ImmutableList.copyOf(
+                Iterables.concat(
+                    rowType.getFieldList(),
+                    fields));
+            return typeFactory.createStructType(allFields);
+          }
+        };
+      }
+
+      @Override public int getExtendedColumnOffset() {
+        return rowType.getFieldCount();
+      }
+    }
+
+    @Override protected RelOptTable extend(final Table extendedTable) {
+      return new MockTable(catalogReader, names, stream, rowCount, resolver, initializerFactory) {
+        @Override public RelDataType getRowType() {
+          return extendedTable.getRowType(catalogReader.typeFactory);
+        }
+      };
     }
 
     /**
@@ -705,13 +726,6 @@ public class MockCatalogReader extends CalciteCatalogReader {
       @Override public List<Pair<RelDataTypeField, List<String>>> resolveColumn(
           RelDataType rowType, RelDataTypeFactory typeFactory, List<String> names) {
         return resolver.resolveColumn(rowType, typeFactory, names);
-      }
-
-      @Override public <C> C unwrap(Class<C> aClass) {
-        if (aClass.isInstance(initializerFactory)) {
-          return aClass.cast(initializerFactory);
-        }
-        return null;
       }
     }
 

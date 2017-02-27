@@ -2093,7 +2093,7 @@ public class SqlToRelConverter {
         final SqlIdentifier identifier = (SqlIdentifier) exColIt.next();
         final SqlDataTypeSpec type = (SqlDataTypeSpec) exColIt.next();
         final RelDataTypeField field = new RelDataTypeFieldImpl(
-            identifier.names.get(0), // The parser will fail if an extended identifier is qualified.
+            identifier.getSimple(),
             extendedFieldOffset++,
             type.deriveType(typeFactory)
         );

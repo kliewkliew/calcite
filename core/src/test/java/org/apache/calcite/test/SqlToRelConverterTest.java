@@ -747,6 +747,11 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testModifiableViewExtend() {
+    final String sql = "select * from EMP_MODIFIABLEVIEW extend (x varchar(5) not null)";
+    sql(sql).ok();
+  }
+
   @Test public void testExplicitTable() {
     sql("table emp").ok();
   }
@@ -1597,20 +1602,20 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertSubsetModifiableView() {
-    final String sql = "insert into EMP_MODIFIABLEVIEW \n"
+    final String sql = "insert into EMP_MODIFIABLEVIEW "
         + "values (10, 'Fred')";
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 
   @Test public void testInsertBindModifiableView() {
-    final String sql = "insert into EMP_MODIFIABLEVIEW (empno, job)\n"
-        + "values (?, ?)";
+    final String sql = "insert into EMP_MODIFIABLEVIEW (empno, job)"
+        + " values (?, ?)";
     sql(sql).ok();
   }
 
   @Test public void testInsertBindSubsetModifiableView() {
-    final String sql = "insert into EMP_MODIFIABLEVIEW \n"
-        + "values (?, ?)";
+    final String sql = "insert into EMP_MODIFIABLEVIEW"
+        + " values (?, ?)";
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 

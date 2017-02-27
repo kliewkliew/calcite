@@ -200,7 +200,7 @@ public class IdentifierNamespace extends AbstractNamespace {
     RelDataType rowType = resolvedNamespace.getRowType();
 
     if (extendList != null) {
-      final List<RelDataTypeField> fields = Lists.newArrayList();
+      final List<RelDataTypeField> extendedFields = Lists.newArrayList();
       final Iterator<SqlNode> extendIterator = extendList.iterator();
       final ExtensibleTable extTable = getTable().unwrap(ExtensibleTable.class);
       int extendedFieldOffset =
@@ -208,17 +208,19 @@ public class IdentifierNamespace extends AbstractNamespace {
               ? getTable().getRowType().getFieldCount()
               : extTable.getExtendedColumnOffset();
       while (extendIterator.hasNext()) {
-        SqlIdentifier id = (SqlIdentifier) extendIterator.next();
-        SqlDataTypeSpec type = (SqlDataTypeSpec) extendIterator.next();
-        fields.add(
-            new RelDataTypeFieldImpl(id.getSimple(), extendedFieldOffset++,
-                type.deriveType(validator)));
+        final SqlIdentifier id = (SqlIdentifier) extendIterator.next();
+        final SqlDataTypeSpec type = (SqlDataTypeSpec) extendIterator.next();
+        final RelDataTypeField field = new RelDataTypeFieldImpl(
+            id.getSimple(),
+            extendedFieldOffset++,
+            type.deriveType(validator));
+        extendedFields.add(field);
       }
 
       if (!(resolvedNamespace instanceof TableNamespace)) {
         throw new RuntimeException("cannot convert");
       }
-      resolvedNamespace = ((TableNamespace) resolvedNamespace).extend(fields);
+      resolvedNamespace = ((TableNamespace) resolvedNamespace).extend(extendedFields);
       rowType = resolvedNamespace.getRowType();
     }
 
