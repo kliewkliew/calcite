@@ -58,8 +58,11 @@ import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.TableMacro;
+import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.schema.impl.AbstractSchema;
+import org.apache.calcite.schema.impl.ViewTable;
 import org.apache.calcite.sql.SqlAccessType;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -186,7 +189,6 @@ public class MockCatalogReader extends CalciteCatalogReader {
         new NullInitializerExpressionFactory(typeFactory) {
           @Override public RexNode newColumnDefaultValue(RelOptTable table,
               int iColumn) {
-            final RexBuilder rexBuilder = new RexBuilder(typeFactory);
             switch (iColumn) {
             case 0:
               return rexBuilder.makeExactLiteral(new BigDecimal(123),
@@ -475,6 +477,8 @@ public class MockCatalogReader extends CalciteCatalogReader {
     //   SELECT *
     //   FROM T
     //   WHERE F0.C0 = 10
+    // This table uses MockViewTable which does not populate the constrained columns with default
+    // values on INSERT.
     final ImmutableIntList m1 = ImmutableIntList.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
     MockTable struct10View =
         new MockViewTable(this, structTypeSchema.getCatalogName(),
@@ -496,6 +500,34 @@ public class MockCatalogReader extends CalciteCatalogReader {
       struct10View.addColumn(column.getName(), column.type);
     }
     registerTable(struct10View);
+
+    // Same as "STRUCT.T_10" except it uses ModifiableViewTable which populates constrained columns
+    // with default values on INSERT.
+    List<String> struct10ModifiableViewNames = ImmutableList.of(
+        structTypeSchema.getCatalogName(), structTypeSchema.name, "T_MODIFIABLEVIEW");
+    TableMacro struct10ModifiableViewMacro = ViewTable.viewMacro(
+        rootSchema.plus(),
+        "select * from T where F0.C0 = 10",
+        struct10ModifiableViewNames.subList(0, 2),
+        ImmutableList.of(struct10ModifiableViewNames.get(2)),
+        true);
+    TranslatableTable struct10ModifiableView =
+        struct10ModifiableViewMacro.apply(ImmutableList.of());
+    registerTable(struct10ModifiableViewNames, struct10ModifiableView);
+
+    List<String> emp20ModifiableViewNames = ImmutableList.of(
+        salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW");
+    TableMacro emp20ModifiableViewMacro = ViewTable.viewMacro(
+        rootSchema.plus(),
+        "select EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, SLACKER"
+            + " from EMPDEFAULTS where DEPTNO = 20",
+        emp20ModifiableViewNames.subList(0, 2),
+        ImmutableList.of(emp20ModifiableViewNames.get(2)),
+        true);
+    TranslatableTable emp20ModifiableView =
+        emp20ModifiableViewMacro.apply(ImmutableList.of());
+    registerTable(emp20ModifiableViewNames, emp20ModifiableView);
+
     return this;
   }
 
@@ -503,20 +535,25 @@ public class MockCatalogReader extends CalciteCatalogReader {
 
   protected void registerTable(final MockTable table) {
     table.onRegister(typeFactory);
-    assert table.names.get(0).equals(DEFAULT_CATALOG);
-    final CalciteSchema schema =
-        rootSchema.getSubSchema(table.names.get(1), true);
     final WrapperTable wrapperTable = new WrapperTable(table);
     if (table.stream) {
-      schema.add(table.names.get(2),
+      registerTable(table.names,
           new StreamableWrapperTable(table) {
             public Table stream() {
               return wrapperTable;
             }
           });
     } else {
-      schema.add(table.names.get(2), wrapperTable);
+      registerTable(table.names, wrapperTable);
     }
+  }
+
+  private void registerTable(final List<String> names, final Table table) {
+    assert names.get(0).equals(DEFAULT_CATALOG);
+    final String schemaName = names.get(1);
+    final String tableName = names.get(2);
+    final CalciteSchema schema = rootSchema.getSubSchema(schemaName, true);
+    schema.add(tableName, table);
   }
 
   protected void registerSchema(MockSchema schema) {
@@ -826,7 +863,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
       this.mapping = mapping;
     }
 
-    /** Implementation of AbstractModifiableView. *///TODO: test ModifiableViewTable
+    /** Implementation of AbstractModifiableView. */
     private class ModifiableView extends JdbcTest.AbstractModifiableView
         implements Wrapper {
       @Override public Table getTable() {

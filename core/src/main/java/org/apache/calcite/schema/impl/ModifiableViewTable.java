@@ -16,7 +16,10 @@
  */
 package org.apache.calcite.schema.impl;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelProtoDataType;
@@ -36,7 +39,9 @@ import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
 import org.apache.calcite.util.ImmutableIntList;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.calcite.sql.fun.SqlStdOperatorTable.AND;
 import static org.apache.calcite.sql.fun.SqlStdOperatorTable.EQUALS;
@@ -83,6 +88,8 @@ public class ModifiableViewTable extends ViewTable
   @Override public <C> C unwrap(Class<C> aClass) {
     if (aClass.isInstance(initializerExpressionFactory)) {
       return aClass.cast(initializerExpressionFactory);
+    } else if (aClass.isInstance(table)) {
+      return aClass.cast(table);
     }
     return null;
   }
@@ -93,10 +100,16 @@ public class ModifiableViewTable extends ViewTable
   private class ModifiableViewTableInitializerExpressionFactory extends
       NullInitializerExpressionFactory {
     private final RelDataTypeFactory typeFactory;
+    private final ImmutableMap<Integer, RexNode> projectMap;
 
     private ModifiableViewTableInitializerExpressionFactory(RelDataTypeFactory typeFactory) {
       super(typeFactory);
       this.typeFactory = typeFactory;
+      final Map<Integer, RexNode> projectMap = Maps.newHashMap();
+      final List<RexNode> filters = new ArrayList<>();
+      RelOptUtil.inferViewPredicates(projectMap, filters, constraint);
+      assert filters.isEmpty();
+      this.projectMap = ImmutableMap.copyOf(projectMap);
     }
 
     @Override public boolean isGeneratedAlways(RelOptTable table, int iColumn) {
@@ -107,69 +120,40 @@ public class ModifiableViewTable extends ViewTable
     @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
       final ModifiableViewTable viewTable = table.unwrap(ModifiableViewTable.class);
       final RelDataType viewType = viewTable.getRowType(typeFactory);
-      final RexNode constraint = viewTable.getConstraint(rexBuilder, viewType);
       final RelDataType iType = viewType.getFieldList().get(iColumn).getType();
 
       // Use the view constraint to generate the default value if the column is constrained.
-      final RexNode columnConstraint = constraint.accept(new ConstraintVisitor(iColumn, iType));
-      if (columnConstraint != null) {
-        return columnConstraint;
+      final int mappedOrdinal = viewTable.columnMapping.get(iColumn);
+      final RexNode viewConstraint = projectMap.get(mappedOrdinal);
+      if (viewConstraint != null) {
+        return rexBuilder.ensureType(
+            iType,
+            viewConstraint,
+            true);
       }
 
       // Otherwise use the default value of the underlying table.
-      final InitializerExpressionFactory initializerExpressionFactory =
-          table.unwrap(InitializerExpressionFactory.class);
-      if (initializerExpressionFactory != null) {
-        return initializerExpressionFactory.newColumnDefaultValue(table, iColumn);
+      final Table schemaTable = viewTable.unwrap(Table.class);
+      if (schemaTable instanceof Wrapper) {
+        final InitializerExpressionFactory initializerExpressionFactory =
+            ((Wrapper) schemaTable).unwrap(InitializerExpressionFactory.class);
+        if (initializerExpressionFactory != null) {
+          final RexNode tableConstraint =
+              initializerExpressionFactory.newColumnDefaultValue(table, iColumn);
+          return rexBuilder.ensureType(
+              iType,
+              tableConstraint,
+              true);
+        }
       }
 
+      // Otherwise Sql type of NULL.
       return super.newColumnDefaultValue(table, iColumn);
     }
 
     @Override public RexNode newAttributeInitializer(RelDataType type,
         SqlFunction constructor, int iAttribute, List<RexNode> constructorArgs) {
       throw new UnsupportedOperationException("Not implemented - unknown requirements");
-    }
-
-    /**
-     * Visit a view constraint to find the column constraint corresponding to a column ordinal.
-     */
-    private class ConstraintVisitor extends RexVisitorImpl<RexNode> {
-      private final Integer ordinal;
-      private final RelDataType type;
-
-      private ConstraintVisitor(Integer ordinal, RelDataType type) {
-        super(false);
-        this.ordinal = ordinal;
-        this.type = type;
-      }
-
-      @Override public RexNode visitCall(RexCall call) {
-        if (!RexUtil.containsInputRef(call)) {
-          return null;
-        }
-        if (EQUALS == call.getOperator()) {
-          final RexNode maybeInputRef = call.getOperands().get(0);
-          if (maybeInputRef instanceof RexInputRef) {
-            if (ordinal == ((RexInputRef) maybeInputRef).getIndex()) {
-              return rexBuilder.ensureType(
-                  type,
-                  call.getOperands().get(1),
-                  true);
-            }
-          }
-        } else if (AND == call.getOperator()) {
-          for (RexNode maybeCall : call.getOperands()) {
-            if (maybeCall instanceof RexCall) {
-              final RexNode constraint = visitCall((RexCall) maybeCall);
-              if (constraint != null) {
-                return constraint;
-              }
-            }
-          }
-        }
-        return null;
-      }
     }
   }
 }

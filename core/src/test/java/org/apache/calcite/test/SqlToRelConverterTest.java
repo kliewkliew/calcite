@@ -1590,6 +1590,18 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testInsertModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW (EMPNO, ENAME, JOB)"
+        + " values (34625, 'nom', 'accountant')";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertSubsetModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW \n"
+        + "values (10, 'Fred')";
+    sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
+  }
+
   @Test public void testInsertWithCustomColumnResolving() {
     final String sql = "insert into struct.t values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     sql(sql).ok();
@@ -1602,10 +1614,19 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertViewWithCustomColumnResolving() {
-    final String sql = "insert into struct.t_10 (f1.c2, c1, k0,\n"
-        + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
-        + "values (?, ?, ?, ?, ?, ?, ?)";
-    sql(sql).ok();
+    if (Bug.CALCITE_1660_FIXED) {
+      final String sql = "insert into STRUCT.T_MODIFIABLEVIEW (f1.c2, c1, k0,\n"
+          + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
+          + "values (?, ?, ?, ?, ?, ?, ?)";
+      sql(sql).ok();
+    } else {
+      // MockViewTable will not populate constrained columns with a default value so we must specify
+      // the F0.C0 column.
+      final String sql = "insert into struct.t (f0.c0, f1.c2, c1, k0,\n"
+          + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
+          + "values (?, ?, ?, ?, ?, ?, ?, ?)";
+      sql(sql).ok();
+    }
   }
 
   @Test public void testUpdateWithCustomColumnResolving() {
