@@ -2081,7 +2081,7 @@ public class SqlToRelConverter {
             catalogReader,
             datasetName,
             usedDataset);
-    if (extendedColumns != null && extendedColumns.size() != 0) {
+    if (extendedColumns != null && extendedColumns.size() > 0) {
       final ImmutableList.Builder<RelDataTypeField> extendedFields = ImmutableList.builder();
       final Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
       final ExtensibleTable extTable = table.unwrap(ExtensibleTable.class);

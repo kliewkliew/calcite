@@ -19,7 +19,6 @@ package org.apache.calcite.sql.validate;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.SqlIdentifier;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.List;
  * implement the repository. It is also possible to construct mock
  * implementations of this interface for testing purposes.
  */
-public interface SqlValidatorCatalogReader extends Wrapper {
+public interface SqlValidatorCatalogReader {
   //~ Methods ----------------------------------------------------------------
 
   /**
