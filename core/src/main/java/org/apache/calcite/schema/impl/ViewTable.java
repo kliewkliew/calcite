@@ -132,51 +132,6 @@ public class ViewTable
           + queryString, e);
     }
   }
-
-  /** Table function that implements a view. It returns the operator
-   * tree of the view's SQL query. */
-  static class ViewTableMacro implements TableMacro {
-    protected final String viewSql;
-    protected final CalciteSchema schema;
-    private final Boolean modifiable;
-    /** Typically null. If specified, overrides the path of the schema as the
-     * context for validating {@code viewSql}. */
-    protected final List<String> schemaPath;
-    protected final List<String> viewPath;
-
-    ViewTableMacro(CalciteSchema schema, String viewSql, List<String> schemaPath,
-        List<String> viewPath, Boolean modifiable) {
-      this.viewSql = viewSql;
-      this.schema = schema;
-      this.viewPath = viewPath == null ? null : ImmutableList.copyOf(viewPath);
-      this.modifiable = modifiable;
-      this.schemaPath =
-          schemaPath == null ? null : ImmutableList.copyOf(schemaPath);
-    }
-
-    public List<FunctionParameter> getParameters() {
-      return Collections.emptyList();
-    }
-
-    public TranslatableTable apply(List<Object> arguments) {
-      CalcitePrepare.AnalyzeViewResult parsed =
-          Schemas.analyzeView(MaterializedViewTable.MATERIALIZATION_CONNECTION,
-              schema, schemaPath, viewSql, modifiable != null && modifiable);
-      final List<String> schemaPath1 =
-          schemaPath != null ? schemaPath : schema.path(null);
-      final JavaTypeFactory typeFactory = (JavaTypeFactory) parsed.typeFactory;
-      final Type elementType = typeFactory.getJavaClass(parsed.rowType);
-      if ((modifiable == null || modifiable) && parsed.table != null) {
-        return new ModifiableViewTable(elementType,
-            RelDataTypeImpl.proto(parsed.rowType), viewSql, schemaPath1, viewPath,
-            parsed.table, Schemas.path(schema.root(), parsed.tablePath),
-            parsed.constraint, parsed.columnMapping, parsed.typeFactory);
-      } else {
-        return new ViewTable(elementType,
-            RelDataTypeImpl.proto(parsed.rowType), viewSql, schemaPath1, viewPath);
-      }
-    }
-  }
 }
 
 // End ViewTable.java

@@ -2266,8 +2266,8 @@ LogicalProject(DEPTNO=[$0], NAME=[$1], X=[$2])
         </Resource>
         <Resource name="plan">
             <![CDATA[
-LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], X=[$9])
-  LogicalTableScan(table=[[CATALOG, SALES, EMPDEFAULTS]])
+LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], SLACKER=[$8], X=[$9])
+  LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
 ]]>
         </Resource>
     </TestCase>

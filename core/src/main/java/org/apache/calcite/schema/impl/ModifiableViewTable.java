@@ -85,8 +85,6 @@ public class ModifiableViewTable extends ViewTable
       return aClass.cast(initializerExpressionFactory);
     } else if (aClass.isInstance(table)) {
       return aClass.cast(table);
-    } else if (table instanceof Wrapper) {
-      return ((Wrapper) table).unwrap(aClass);
     }
     return null;
   }
