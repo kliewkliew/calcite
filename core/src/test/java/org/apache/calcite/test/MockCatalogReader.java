@@ -502,20 +502,8 @@ public class MockCatalogReader extends CalciteCatalogReader {
     }
     registerTable(struct10View);
 
-    // Same as "STRUCT.T_10"and "EMP_20" except it uses ModifiableViewTable which populates
+    // Same as "EMP_20" except it uses ModifiableViewTable which populates
     // constrained columns with default values on INSERT.
-    List<String> structModifiableViewNames = ImmutableList.of(
-        structTypeSchema.getCatalogName(), structTypeSchema.name, "T_MODIFIABLEVIEW");
-    TableMacro structModifiableViewMacro = MockModifiableViewRelOptTable.viewMacro(rootSchema,
-        "select * from T where F0.C0 = 10", structModifiableViewNames.subList(0, 2),
-        ImmutableList.of(structModifiableViewNames.get(2)), true);
-    TranslatableTable structModifiableView = structModifiableViewMacro.apply(ImmutableList.of());
-    MockModifiableViewRelOptTable mockStructViewTable = MockModifiableViewRelOptTable.create(
-        (MockModifiableViewRelOptTable.MockModifiableViewTable) structModifiableView, this,
-        structModifiableViewNames.get(0), structModifiableViewNames.get(1),
-        structModifiableViewNames.get(2), false, 20, structTypeTableResolver);
-    registerTable(mockStructViewTable);
-
     List<String> empModifiableViewNames = ImmutableList.of(
         salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW");
     TableMacro empModifiableViewMacro = MockModifiableViewRelOptTable.viewMacro(rootSchema,

@@ -175,11 +175,6 @@ public abstract class Bug {
    * Decorrelate sub-queries in Project and Join</a> is fixed. */
   public static final boolean CALCITE_1045_FIXED = false;
 
-  /** Whether
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-1660">[CALCITE-1660]
-   * SqlNameMatcher does not match fields in a structure</a> is fixed. */
-  public static final boolean CALCITE_1660_FIXED = false;
-
   /**
    * Use this to flag temporary code.
    */

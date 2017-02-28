@@ -1631,19 +1631,10 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertViewWithCustomColumnResolving() {
-    if (Bug.CALCITE_1660_FIXED) {
-      final String sql = "insert into STRUCT.T_MODIFIABLEVIEW (f1.c2, c1, k0,\n"
-          + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
-          + "values (?, ?, ?, ?, ?, ?, ?)";
-      sql(sql).ok();
-    } else {
-      // MockViewTable will not populate constrained columns with a default value so we must specify
-      // the F0.C0 column.
-      final String sql = "insert into struct.t (f0.c0, f1.c2, c1, k0,\n"
-          + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
-          + "values (?, ?, ?, ?, ?, ?, ?, ?)";
-      sql(sql).ok();
-    }
+    final String sql = "insert into struct.t (f0.c0, f1.c2, c1, k0,\n"
+        + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
+        + "values (?, ?, ?, ?, ?, ?, ?, ?)";
+    sql(sql).ok();
   }
 
   @Test public void testUpdateWithCustomColumnResolving() {
