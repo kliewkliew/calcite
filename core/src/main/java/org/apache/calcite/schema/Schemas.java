@@ -509,7 +509,9 @@ public final class Schemas {
     if (!iterator.hasNext()) {
       return PathImpl.EMPTY;
     }
-    assert rootSchema.name.equals(iterator.next());
+    if (!rootSchema.name.isEmpty()) {
+      assert rootSchema.name.equals(iterator.next());
+    }
     for (;;) {
       final String name = iterator.next();
       builder.add(Pair.of(name, schema));
