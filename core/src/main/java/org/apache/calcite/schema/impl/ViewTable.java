@@ -17,8 +17,6 @@
 package org.apache.calcite.schema.impl;
 
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
-import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.jdbc.CalcitePrepare;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
@@ -28,19 +26,14 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelProtoDataType;
-import org.apache.calcite.schema.FunctionParameter;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.schema.Schemas;
-import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.schema.TranslatableTable;
 
 import com.google.common.collect.ImmutableList;
 
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.List;
 
 /**

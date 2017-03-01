@@ -66,7 +66,6 @@ import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.schema.impl.AbstractSchema;
 import org.apache.calcite.schema.impl.ModifiableViewTable;
-import org.apache.calcite.schema.impl.ViewTable;
 import org.apache.calcite.schema.impl.ViewTableMacro;
 import org.apache.calcite.sql.SqlAccessType;
 import org.apache.calcite.sql.SqlCollation;
@@ -914,12 +913,12 @@ public class MockCatalogReader extends CalciteCatalogReader {
         boolean stream, double rowCount, ColumnResolver resolver) {
       final Table underlying = modifiableViewTable.unwrap(Table.class);
       final InitializerExpressionFactory maybeInitializerExpressionFactory =
-          underlying != null && underlying instanceof Wrapper ?
-              ((Wrapper) underlying).unwrap(InitializerExpressionFactory.class)
+          underlying != null && underlying instanceof Wrapper
+              ? ((Wrapper) underlying).unwrap(InitializerExpressionFactory.class)
               : new NullInitializerExpressionFactory(catalogReader.typeFactory);
       final InitializerExpressionFactory initializerExpressionFactory =
-          maybeInitializerExpressionFactory == null ?
-              new NullInitializerExpressionFactory(catalogReader.typeFactory)
+          maybeInitializerExpressionFactory == null
+              ? new NullInitializerExpressionFactory(catalogReader.typeFactory)
               : maybeInitializerExpressionFactory;
       return new MockModifiableViewRelOptTable(modifiableViewTable, catalogReader, catalogName,
           schemaName, name, stream, rowCount, resolver, initializerExpressionFactory);
@@ -956,6 +955,9 @@ public class MockCatalogReader extends CalciteCatalogReader {
       return super.unwrap(clazz);
     }
 
+    /**
+     * A TableMacro that creates mock ModifiableViewTable.
+     */
     public static class MockViewTableMacro extends ViewTableMacro {
       MockViewTableMacro(CalciteSchema schema, String viewSql, List<String> schemaPath,
           List<String> viewPath, Boolean modifiable) {
@@ -974,6 +976,9 @@ public class MockCatalogReader extends CalciteCatalogReader {
       }
     }
 
+    /**
+     * A mock of ModifiableViewTable that can unwrap a mock RelOptTable.
+     */
     private static class MockModifiableViewTable extends ModifiableViewTable {
       private final Type elementType;
       private final String viewSql;
