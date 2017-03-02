@@ -475,8 +475,12 @@ public class MockCatalogReader extends CalciteCatalogReader {
     registerTable(structNullableTypeTable);
 
     // Register "STRUCT.T_10" view.
-    // Same columns as "STRUCT.T", but "F0.C0" is set to 10 by default, which is the equivalent of:
-    //   SELECT * FROM T WHERE F0.C0 = 10
+    // Same columns as "STRUCT.T",
+    // but "F0.C0" is set to 10 by default,
+    // which is the equivalent of:
+    //   SELECT *
+    //   FROM T
+    //   WHERE F0.C0 = 10
     // This table uses MockViewTable which does not populate the constrained columns with default
     // values on INSERT.
     final ImmutableIntList m1 = ImmutableIntList.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
@@ -504,7 +508,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
     return init2(salesSchema);
   }
 
-  public MockCatalogReader init2(MockSchema salesSchema) {
+  private MockCatalogReader init2(MockSchema salesSchema) {
     // Same as "EMP_20" except it uses ModifiableViewTable which populates
     // constrained columns with default values on INSERT and has a single constraint on DEPTNO.
     List<String> empModifiableViewNames = ImmutableList.of(

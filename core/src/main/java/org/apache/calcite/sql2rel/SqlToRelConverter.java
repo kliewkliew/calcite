@@ -68,7 +68,6 @@ import org.apache.calcite.rel.stream.LogicalDelta;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -84,7 +83,6 @@ import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexWindowBound;
-import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.ModifiableView;
 import org.apache.calcite.schema.Table;
@@ -187,7 +185,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -2082,24 +2079,10 @@ public class SqlToRelConverter {
             datasetName,
             usedDataset);
     if (extendedColumns != null && extendedColumns.size() > 0) {
-      final ImmutableList.Builder<RelDataTypeField> extendedFields = ImmutableList.builder();
-      final Iterator<SqlNode> exColIt = extendedColumns.getList().iterator();
-      final ExtensibleTable extTable = table.unwrap(ExtensibleTable.class);
-      int extendedFieldOffset =
-          extTable == null
-              ? table.getRowType().getFieldCount()
-              : extTable.getExtendedColumnOffset();
-      while (exColIt.hasNext()) {
-        final SqlIdentifier identifier = (SqlIdentifier) exColIt.next();
-        final SqlDataTypeSpec type = (SqlDataTypeSpec) exColIt.next();
-        final RelDataTypeField field = new RelDataTypeFieldImpl(
-            identifier.getSimple(),
-            extendedFieldOffset++,
-            type.deriveType(typeFactory)
-        );
-        extendedFields.add(field);
-      }
-      table = table.extend(extendedFields.build());
+      final List<RelDataTypeField> extendedFields =
+          SqlValidatorUtil.getExtendedColumns(
+              validator, table.unwrap(SqlValidatorTable.class), extendedColumns);
+      table = table.extend(extendedFields);
     }
     final RelNode tableRel;
     if (config.isConvertTableAccess()) {
