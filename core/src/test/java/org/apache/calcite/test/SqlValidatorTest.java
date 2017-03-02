@@ -8231,6 +8231,15 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     sql(sql).ok().bindType("RecordType(INTEGER ?0, INTEGER ?1, VARCHAR(20) ?2)");
   }
 
+  @Test public void testInsertModifiableViewPassConstraint() {
+    sql("insert into EMP_MODIFIABLEVIEW2 (deptno, empno, ename, extra)"
+        + " values (20, 100, 'Lex', true)").ok();
+    sql("insert into EMP_MODIFIABLEVIEW2 (empno, ename, extra)"
+        + " values (100, 'Lex', true)").ok();
+    sql("insert into EMP_MODIFIABLEVIEW2 values (20, 'Edward')")
+        .tester(tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003)).ok();
+  }
+
   @Test public void testInsertModifiableViewFailConstraint() {
     tester.checkQueryFails(
         "insert into EMP_MODIFIABLEVIEW2 (deptno, empno, ename)"
@@ -8245,11 +8254,29 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
             + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
   }
 
-  @Test public void testInsertModifiableViewPassConstraint() {
-    sql("insert into EMP_MODIFIABLEVIEW2 (deptno, empno, ename, extra)"
-            + " values (20, 100, 'Lex', true)").ok();
-    sql("insert into EMP_MODIFIABLEVIEW2 values (20, 'Edward')")
-        .tester(tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003)).ok();
+  @Test public void testUpdateModifiableViewPassConstraint() {
+    sql("update EMP_MODIFIABLEVIEW2"
+        + " set deptno = 20, empno = 99"
+        + " where ename = 'Lex'").ok();
+    sql("update EMP_MODIFIABLEVIEW2"
+        + " set empno = 99"
+        + " where ename = 'Lex'").ok();
+  }
+
+  @Test public void testUpdateModifiableViewFailConstraint() {
+    tester.checkQueryFails(
+        "update EMP_MODIFIABLEVIEW2"
+            + " set deptno = ^21^, empno = 99"
+            + " where ename = 'Lex'",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
+    // TODO: support expressions.
+    tester.checkQueryFails(
+        "update EMP_MODIFIABLEVIEW2"
+            + " set deptno = ^19 + 1^, empno = 99"
+            + " where ename = 'Lex'",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
   }
 
   @Test public void testInsertFailNullability() {
