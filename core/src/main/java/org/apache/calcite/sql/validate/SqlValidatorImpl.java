@@ -19,17 +19,25 @@ package org.apache.calcite.sql.validate;
 import org.apache.calcite.config.NullCollation;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptTable;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelRecordType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexSqlStandardConvertletTable;
+import org.apache.calcite.rex.RexToSqlNodeConverter;
+import org.apache.calcite.rex.RexToSqlNodeConverterImpl;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.runtime.Feature;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.impl.ModifiableViewTable;
 import org.apache.calcite.sql.JoinConditionType;
 import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlAccessEnum;
@@ -91,6 +99,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.slf4j.Logger;
@@ -3811,7 +3820,74 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
 
     checkTypeAssignment(logicalSourceRowType, logicalTargetRowType, insert);
 
+    checkConstraint(table, source, logicalTargetRowType);
+
     validateAccess(insert.getTargetTable(), table, SqlAccessEnum.INSERT);
+  }
+
+  private void checkConstraint(
+      SqlValidatorTable table,
+      SqlNode source,
+      RelDataType logicalTargetRowType) {
+    final ModifiableViewTable modifiableViewTable = table.unwrap(ModifiableViewTable.class);
+    if (modifiableViewTable != null && source instanceof SqlCall) {
+      final RexBuilder rexBuilder = new RexBuilder(typeFactory);
+      final RexNode constraint =
+          modifiableViewTable.getConstraint(rexBuilder, logicalTargetRowType);
+      final Map<Integer, RexNode> projectMap = Maps.newHashMap();
+      final List<RexNode> filters = new ArrayList<>();
+      RelOptUtil.inferViewPredicates(projectMap, filters, constraint);
+      if (filters.isEmpty()) {
+        final List<SqlNode> values = ((SqlCall) source).getOperandList();
+        for (SqlNode row : values) {
+          for (Map.Entry<Integer, RexNode> entry : projectMap.entrySet()) {
+            Integer projectedOrdinal = null;
+            for (Integer ordinal : modifiableViewTable.getColumnMapping()) {
+              if (entry.getKey().intValue() == ordinal.intValue()) {
+                projectedOrdinal = ordinal;
+              }
+            }
+            if (projectedOrdinal == null) {
+              // The constrained column was not projected in the view definition.
+              continue;
+            }
+
+            final String colName = modifiableViewTable.getRowType(typeFactory)
+                .getFieldList().get(projectedOrdinal).getName();
+            final RelDataTypeField targetField =
+                logicalTargetRowType.getField(colName, true, false);
+            if (targetField == null) {
+              // The constrained column is not targeted.
+              continue;
+            }
+            final SqlNode cell = ((SqlCall) row).getOperandList().get(targetField.getIndex());
+            if (!(cell instanceof SqlLiteral)) {
+              // We cannot guarantee that the value satisfies the constraint.
+              throw newValidationError(cell,
+                  RESOURCE.viewConstraintNotSatisfied(
+                      colName, Util.last(table.getQualifiedName())));
+            }
+            final SqlLiteral insertValue = (SqlLiteral) cell;
+            final RexLiteral columnConstraint = (RexLiteral) entry.getValue();
+
+            final RexSqlStandardConvertletTable convertletTable =
+                new RexSqlStandardConvertletTable();
+            final RexToSqlNodeConverter sqlNodeToRexConverter =
+                new RexToSqlNodeConverterImpl(convertletTable);
+            final SqlLiteral constraintValue =
+                (SqlLiteral) sqlNodeToRexConverter.convertLiteral(columnConstraint);
+
+            if (!insertValue.equals(constraintValue)) {
+              // The value does not satisfy the constraint.
+              throw newValidationError(cell,
+                  RESOURCE.viewConstraintNotSatisfied(
+                      colName, Util.last(table.getQualifiedName())));
+            }
+          }
+
+        }
+      }
+    }
   }
 
   private void checkFieldCount(

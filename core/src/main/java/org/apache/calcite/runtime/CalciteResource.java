@@ -642,6 +642,9 @@ public interface CalciteResource {
   @BaseMessage("View is not modifiable. No value is supplied for NOT NULL column ''{0}'' of base table ''{1}''")
   ExInst<SqlValidatorException> noValueSuppliedForViewColumn(String columnName, String tableName);
 
+  @BaseMessage("Modifiable view constraint is not satisfied for column ''{0}'' of base table ''{1}''")
+  ExInst<SqlValidatorException> viewConstraintNotSatisfied(String columnName, String tableName);
+
   @BaseMessage("Not a record type. The ''*'' operator requires a record")
   ExInst<SqlValidatorException> starRequiresRecordType();
 

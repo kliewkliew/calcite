@@ -501,8 +501,12 @@ public class MockCatalogReader extends CalciteCatalogReader {
     }
     registerTable(struct10View);
 
+    return init2(salesSchema);
+  }
+
+  public MockCatalogReader init2(MockSchema salesSchema) {
     // Same as "EMP_20" except it uses ModifiableViewTable which populates
-    // constrained columns with default values on INSERT.
+    // constrained columns with default values on INSERT and has a single constraint on DEPTNO.
     List<String> empModifiableViewNames = ImmutableList.of(
         salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW");
     TableMacro empModifiableViewMacro = MockModifiableViewRelOptTable.viewMacro(rootSchema,
@@ -515,6 +519,21 @@ public class MockCatalogReader extends CalciteCatalogReader {
         empModifiableViewNames.get(0), empModifiableViewNames.get(1),
         empModifiableViewNames.get(2), false, 20, null);
     registerTable(mockEmpViewTable);
+
+    // Same as "EMP_MODIFIABLEVIEW" except that all columns are in the view
+    // and there is an `extra` extended column.
+    List<String> empModifiableViewNames2 = ImmutableList.of(
+        salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW2");
+    TableMacro empModifiableViewMacro2 = MockModifiableViewRelOptTable.viewMacro(rootSchema,
+        "select * from EMPDEFAULTS extend (extra boolean)"
+            + " where DEPTNO = 20", empModifiableViewNames.subList(0, 2),
+        ImmutableList.of(empModifiableViewNames.get(2)), true);
+    TranslatableTable empModifiableView2 = empModifiableViewMacro2.apply(ImmutableList.of());
+    MockModifiableViewRelOptTable mockEmpViewTable2 = MockModifiableViewRelOptTable.create(
+        (MockModifiableViewRelOptTable.MockModifiableViewTable) empModifiableView2, this,
+        empModifiableViewNames2.get(0), empModifiableViewNames2.get(1),
+        empModifiableViewNames2.get(2), false, 20, null);
+    registerTable(mockEmpViewTable2);
 
     return this;
   }

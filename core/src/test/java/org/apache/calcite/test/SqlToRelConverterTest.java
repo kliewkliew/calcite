@@ -742,13 +742,53 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testTableSubset() {
+    final String sql = "select deptno, name from dept";
+    sql(sql).ok();
+  }
+
+  @Test public void testTableExpression() {
+    final String sql = "select deptno + deptno from dept";
+    sql(sql).ok();
+  }
+
   @Test public void testTableExtend() {
     final String sql = "select * from dept extend (x varchar(5) not null)";
     sql(sql).ok();
   }
 
+  @Test public void testTableExtendSubset() {
+    final String sql = "select deptno, x from dept extend (x int)";
+    sql(sql).ok();
+  }
+
+  @Test public void testTableExtendExpression() {
+    final String sql = "select deptno + x from dept extend (x int not null)";
+    sql(sql).ok();
+  }
+
   @Test public void testModifiableViewExtend() {
     final String sql = "select * from EMP_MODIFIABLEVIEW extend (x varchar(5) not null)";
+    sql(sql).ok();
+  }
+
+  @Test public void testModifiableViewExtendSubset() {
+    final String sql = "select x, empno from EMP_MODIFIABLEVIEW extend (x varchar(5) not null)";
+    sql(sql).ok();
+  }
+
+  @Test public void testModifiableViewExtendExpression() {
+    final String sql = "select empno + x from EMP_MODIFIABLEVIEW extend (x int not null)";
+    sql(sql).ok();
+  }
+
+  @Test public void testSelectModifiableViewConstraint() {
+    final String sql = "select deptno from EMP_MODIFIABLEVIEW2 where deptno = ?";
+    sql(sql).ok();
+  }
+
+  @Test public void testModifiableViewDDLExtend() {
+    final String sql = "select extra from EMP_MODIFIABLEVIEW2";
     sql(sql).ok();
   }
 
@@ -1631,7 +1671,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   @Test public void testInsertViewWithCustomColumnResolving() {
-    final String sql = "insert into struct.t (f0.c0, f1.c2, c1, k0,\n"
+    final String sql = "insert into struct.t_10 (f0.c0, f1.c2, c1, k0,\n"
         + "  f1.a0, f2.a0, f0.c1, f2.c3)\n"
         + "values (?, ?, ?, ?, ?, ?, ?, ?)";
     sql(sql).ok();

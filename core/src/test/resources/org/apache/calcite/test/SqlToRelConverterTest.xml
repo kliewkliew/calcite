@@ -2249,6 +2249,28 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testTableSubset">
+        <Resource name="sql">
+            <![CDATA[select deptno, name from dept]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(DEPTNO=[$0], NAME=[$1])
+  LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testTableExpression">
+        <Resource name="sql">
+            <![CDATA[select deptno + deptno from dept]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(EXPR$0=[+($0, $0)])
+  LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testTableExtend">
         <Resource name="sql">
             <![CDATA[select * from dept extend (x varchar(5) not null)]]>
@@ -2256,6 +2278,28 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
         <Resource name="plan">
             <![CDATA[
 LogicalProject(DEPTNO=[$0], NAME=[$1], X=[$2])
+  LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testTableExtendSubset">
+        <Resource name="sql">
+            <![CDATA[select deptno, x from dept extend (x int)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(DEPTNO=[$0], X=[$2])
+  LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testTableExtendExpression">
+        <Resource name="sql">
+            <![CDATA[select deptno + x from dept extend (x int not null)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(EXPR$0=[+($0, $2)])
   LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
 ]]>
         </Resource>
@@ -2268,6 +2312,51 @@ LogicalProject(DEPTNO=[$0], NAME=[$1], X=[$2])
             <![CDATA[
 LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], SLACKER=[$8], X=[$9])
   LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testModifiableViewExtendSubset">
+        <Resource name="sql">
+            <![CDATA[select x, empno from EMP_MODIFIABLEVIEW extend (x varchar(5) not null)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(X=[$9], EMPNO=[$0])
+  LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testModifiableViewExtendExpression">
+        <Resource name="sql">
+            <![CDATA[select empno + x from EMP_MODIFIABLEVIEW extend (x int not null)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(EXPR$0=[+($0, $9)])
+  LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testSelectModifiableViewConstraint">
+        <Resource name="sql">
+            <![CDATA[select deptno from EMP_MODIFIABLEVIEW2 where deptno = ?]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(DEPTNO=[$7])
+  LogicalFilter(condition=[=($7, ?0)])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW2]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testModifiableViewDDLExtend">
+        <Resource name="sql">
+            <![CDATA[select extra from EMP_MODIFIABLEVIEW2]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(EXTRA=[$9])
+  LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW2]])
 ]]>
         </Resource>
     </TestCase>
@@ -2823,9 +2912,11 @@ values (?, ?, ?, ?, ?, ?, ?, ?)]]>
         <Resource name="plan">
             <![CDATA[
 LogicalTableModify(table=[[CATALOG, STRUCT, T]], operation=[INSERT], flattened=[true])
-  LogicalProject("K0"=[$3], "C1"=[$2], "F1"."A0"=[$4], "F2"."A0"=[$5], "F0"."C0"=[$0], "F1"."C0"=[null], "F0"."C1"=[$6], "F1"."C2"=[$1], "F2"."C3"=[$7])
-    LogicalProject(EXPR$0=[?0], EXPR$1=[?1], EXPR$2=[?2], EXPR$3=[?3], EXPR$4=[?4], EXPR$5=[?5], EXPR$6=[?6], EXPR$7=[?7])
-      LogicalValues(tuples=[[{ 0 }]])
+  LogicalFilter(condition=[=($4, 10)])
+    LogicalProject("K0"=[CAST($0):VARCHAR(20) CHARACTER SET "ISO-8859-1" COLLATE "ISO-8859-1$en_US$primary" NOT NULL], "C1"=[CAST($1):VARCHAR(20) CHARACTER SET "ISO-8859-1" COLLATE "ISO-8859-1$en_US$primary" NOT NULL], "F1"."A0"=[CAST($2):INTEGER NOT NULL], "F2"."A0"=[CAST($3):BOOLEAN NOT NULL], "F0"."C0"=[CAST($4):INTEGER NOT NULL], "F1"."C0"=[$5], "F0"."C1"=[CAST($6):INTEGER NOT NULL], "F1"."C2"=[CAST($7):INTEGER NOT NULL], "F2"."C3"=[CAST($8):INTEGER NOT NULL])
+      LogicalProject("K0"=[$3], "C1"=[$2], "F1"."A0"=[$4], "F2"."A0"=[$5], "F0"."C0"=[$0], "F1"."C0"=[null], "F0"."C1"=[$6], "F1"."C2"=[$1], "F2"."C3"=[$7])
+        LogicalProject(EXPR$0=[?0], EXPR$1=[?1], EXPR$2=[?2], EXPR$3=[?3], EXPR$4=[?4], EXPR$5=[?5], EXPR$6=[?6], EXPR$7=[?7])
+          LogicalValues(tuples=[[{ 0 }]])
 ]]>
         </Resource>
     </TestCase>
