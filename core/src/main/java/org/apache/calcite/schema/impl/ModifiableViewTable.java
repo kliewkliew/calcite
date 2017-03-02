@@ -103,7 +103,7 @@ public class ModifiableViewTable extends ViewTable
       final Map<Integer, RexNode> projectMap = Maps.newHashMap();
       final List<RexNode> filters = new ArrayList<>();
       RelOptUtil.inferViewPredicates(projectMap, filters, constraint);
-      // TODO (change this to a if (Bug.CALCITE-####)): assert filters.isEmpty();
+      assert filters.isEmpty();
       this.projectMap = ImmutableMap.copyOf(projectMap);
     }
 

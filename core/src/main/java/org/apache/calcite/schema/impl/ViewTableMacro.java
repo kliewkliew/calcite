@@ -64,7 +64,7 @@ public class ViewTableMacro implements TableMacro {
         schemaPath != null ? schemaPath : schema.path(null);
     final JavaTypeFactory typeFactory = (JavaTypeFactory) parsed.typeFactory;
     final Type elementType = typeFactory.getJavaClass(parsed.rowType);
-    if ((modifiable == null || modifiable) && parsed.table != null) {
+    if ((modifiable == null || modifiable) && parsed.modifiable && parsed.table != null) {
       return modifiableViewTable(parsed, viewSql, schemaPath1, viewPath, schema);
     } else {
       return viewTable(parsed, viewSql, schemaPath1, viewPath);

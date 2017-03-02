@@ -636,6 +636,9 @@ public interface CalciteResource {
   @BaseMessage("Modifiable view must be based on a single table")
   ExInst<SqlValidatorException> modifiableViewMustBeBasedOnSingleTable();
 
+  @BaseMessage("Modifiable view must be predicated only on equality expressions")
+  ExInst<SqlValidatorException> modifiableViewMustHaveOnlyEqualityPredicates();
+
   @BaseMessage("View is not modifiable. More than one expression maps to column ''{0}'' of base table ''{1}''")
   ExInst<SqlValidatorException> moreThanOneMappedColumn(String columnName, String tableName);
 
