@@ -1582,6 +1582,13 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).conformance(SqlConformanceEnum.PRAGMATIC_2003).ok();
   }
 
+  @Test public void testInsertExtendedColumn() {
+    final String sql = "insert into empdefaults(updated TIMESTAMP)"
+        + " (ename, deptno, empno, updated, sal)"
+        + " values ('Fred', 456, 44, timestamp '2017-03-12 13:03:05', 999999)";
+    sql(sql).ok();
+  }
+
   @Test public void testDelete() {
     final String sql = "delete from emp";
     sql(sql).ok();
@@ -1607,6 +1614,13 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   @Test public void testUpdateWhere() {
     final String sql = "update emp set empno = empno + 1 where deptno = 10";
+    sql(sql).ok();
+  }
+
+  @Test public void testUpdateExtendedColumn() {
+    final String sql = "update empdefaults(updated TIMESTAMP)"
+        + " set deptno = 1, updated = timestamp '2017-03-12 13:03:05', empno = 20, ename = 'Bob'"
+        + " where deptno = 10";
     sql(sql).ok();
   }
 

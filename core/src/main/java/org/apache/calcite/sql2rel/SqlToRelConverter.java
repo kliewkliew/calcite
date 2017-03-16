@@ -2151,7 +2151,7 @@ public class SqlToRelConverter {
       final SqlValidatorTable validatorTable =
           table.unwrap(SqlValidatorTable.class);
       final List<RelDataTypeField> extendedFields =
-          SqlValidatorUtil.getExtendedColumns(validator, validatorTable,
+          SqlValidatorUtil.getExtendedColumns(validator.getTypeFactory(), validatorTable,
               extendedColumns);
       table = table.extend(extendedFields);
     }
@@ -3112,8 +3112,14 @@ public class SqlToRelConverter {
   }
 
   protected RelOptTable getTargetTable(SqlNode call) {
-    SqlValidatorNamespace targetNs = validator.getNamespace(call).resolve();
-    return SqlValidatorUtil.getRelOptTable(targetNs, catalogReader, null, null);
+    final SqlValidatorNamespace targetNs = validator.getNamespace(call);
+    if (targetNs.isWrapperFor(SqlValidatorImpl.DmlNamespace.class)) {
+      final SqlValidatorImpl.DmlNamespace dmlNamespace =
+          targetNs.unwrap(SqlValidatorImpl.DmlNamespace.class);
+      return SqlValidatorUtil.getRelOptTable(dmlNamespace, catalogReader, null, null);
+    }
+    final SqlValidatorNamespace resolvedNamespace = targetNs.resolve();
+    return SqlValidatorUtil.getRelOptTable(resolvedNamespace, catalogReader, null, null);
   }
 
   /**

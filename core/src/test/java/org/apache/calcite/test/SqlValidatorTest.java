@@ -9141,6 +9141,30 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     sql(sql)
         .fails("Invalid number of parameters to COUNT method");
   }
+
+  @Test public void testInsertExtendedColumn() {
+    sql("insert into empdefaults(extra BOOLEAN, note VARCHAR)"
+        + " (deptno, empno, ename, extra, note) values (1, 10, '2', true, 'ok')").ok();
+    sql("insert into emp(\"rank\" INT, extra BOOLEAN)"
+        + " values (1, 'nom', 'job', 0, timestamp '1970-01-01 00:00:00', 1, 1,"
+        + "  1, false, 100, false)").ok();
+  }
+
+  //TODO: test failure cases
+  // modifiable view constraint violation
+  // column excluded from view
+  // test delete
+  // test merge
+  // converter tests
+
+  @Test public void testUpdateExtendedColumn() {
+    sql("update empdefaults(extra BOOLEAN, note VARCHAR)"
+        + " set deptno = 1, extra = true, empno = 20, ename = 'Bob', note = 'legion'"
+        + " where deptno = 10").ok();
+    sql("update empdefaults(extra BOOLEAN)"
+        + " set extra = true, deptno = 1, ename = 'Bob'"
+        + " where deptno = 10").ok();
+  }
 }
 
 // End SqlValidatorTest.java

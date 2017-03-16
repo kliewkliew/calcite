@@ -3324,6 +3324,31 @@ LogicalTableModify(table=[[CATALOG, SALES, EMP]], operation=[UPDATE], updateColu
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testInsertExtendedColumn">
+        <Resource name="sql">
+            <![CDATA[insert into empdefaults(updated TIMESTAMP) (ename, deptno, empno, updated, sal) values ('Fred', 456, 44, timestamp '2017-03-12 13:03:05', 999999)]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[INSERT], flattened=[true])
+  LogicalProject(EMPNO=[$2], ENAME=[$0], JOB=[null], MGR=[null], HIREDATE=[null], SAL=[$4], COMM=[null], DEPTNO=[$1], SLACKER=[null], UPDATED=[$3])
+    LogicalValues(tuples=[[{ 'Fred', 456, 44, 2017-03-12 13:03:05, 999999 }]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testUpdateExtendedColumn">
+        <Resource name="sql">
+            <![CDATA[update empdefaults(updated TIMESTAMP) set deptno = 1, updated = timestamp '2017-03-12 13:03:05', empno = 20, ename = 'Bob' where deptno = 10]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalTableModify(table=[[CATALOG, SALES, EMPDEFAULTS]], operation=[UPDATE], updateColumnList=[[DEPTNO, UPDATED, EMPNO, ENAME]], sourceExpressionList=[[1, 2017-03-12 13:03:05, 20, 'Bob']], flattened=[true])
+  LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], UPDATED=[$9], EXPR$0=[1], EXPR$1=[2017-03-12 13:03:05], EXPR$2=[20], EXPR$3=['Bob'])
+    LogicalFilter(condition=[=($7, 10)])
+      LogicalTableScan(table=[[CATALOG, SALES, EMPDEFAULTS]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testDelete">
         <Resource name="sql">
             <![CDATA[delete from emp]]>

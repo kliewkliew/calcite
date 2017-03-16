@@ -4153,9 +4153,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     SqlSelect sqlSelect = call.getSourceSelect();
     validateSelect(sqlSelect, unknownType);
 
-    IdentifierNamespace targetNamespace =
-        getNamespace(call.getTargetTable()).unwrap(
-            IdentifierNamespace.class);
+    final SqlValidatorNamespace targetNamespace = getNamespace(call);
     validateNamespace(targetNamespace, unknownType);
     SqlValidatorTable table = targetNamespace.getTable();
 
@@ -4163,9 +4161,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   }
 
   public void validateUpdate(SqlUpdate call) {
-    IdentifierNamespace targetNamespace =
-        getNamespace(call.getTargetTable()).unwrap(
-            IdentifierNamespace.class);
+    final SqlValidatorNamespace targetNamespace = getNamespace(call);
     validateNamespace(targetNamespace, unknownType);
     SqlValidatorTable table = targetNamespace.getTable();
 
