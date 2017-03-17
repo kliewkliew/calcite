@@ -4183,7 +4183,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     SqlSelect select = call.getSourceSelect();
     validateSelect(select, targetRowType);
 
-    RelDataType sourceRowType = getNamespace(select).getRowType();
+    RelDataType sourceRowType = getNamespace(call).getRowType();
     checkTypeAssignment(sourceRowType, targetRowType, call);
 
     checkConstraint(table, call, targetRowType);
