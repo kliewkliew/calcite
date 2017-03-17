@@ -3838,18 +3838,18 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     // INSERT has an optional column name list.  If present then
     // reduce the rowtype to the columns specified.  If not present
     // then the entire target rowtype is used.
-    RelDataType targetRowType =
+    final RelDataType targetRowType =
         createTargetRowType(
             table,
             insert.getTargetColumnList(),
             false);
 
-    SqlNode source = insert.getSource();
+    final SqlNode source = insert.getSource();
     if (source instanceof SqlSelect) {
-      SqlSelect sqlSelect = (SqlSelect) source;
+      final SqlSelect sqlSelect = (SqlSelect) source;
       validateSelect(sqlSelect, targetRowType);
     } else {
-      SqlValidatorScope scope = scopes.get(source);
+      final SqlValidatorScope scope = scopes.get(source);
       validateQuery(source, scope, targetRowType);
     }
 
@@ -3858,11 +3858,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     // from validateSelect above).  It would be better if that information
     // were used here so that we never saw any untyped nulls during
     // checkTypeAssignment.
-    RelDataType sourceRowType = getNamespace(source).getRowType();
-    RelDataType logicalTargetRowType =
+    final RelDataType sourceRowType = getNamespace(source).getRowType();
+    final RelDataType logicalTargetRowType =
         getLogicalTargetRowType(targetRowType, insert);
     setValidatedNodeType(insert, logicalTargetRowType);
-    RelDataType logicalSourceRowType =
+    final RelDataType logicalSourceRowType =
         getLogicalSourceRowType(sourceRowType, insert);
 
     checkFieldCount(insert, table, logicalSourceRowType, logicalTargetRowType);
@@ -4155,12 +4155,12 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   }
 
   public void validateDelete(SqlDelete call) {
-    SqlSelect sqlSelect = call.getSourceSelect();
+    final SqlSelect sqlSelect = call.getSourceSelect();
     validateSelect(sqlSelect, unknownType);
 
     final SqlValidatorNamespace targetNamespace = getNamespace(call);
     validateNamespace(targetNamespace, unknownType);
-    SqlValidatorTable table = targetNamespace.getTable();
+    final SqlValidatorTable table = targetNamespace.getTable();
 
     validateAccess(call.getTargetTable(), table, SqlAccessEnum.DELETE);
   }
@@ -4174,16 +4174,16 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         ? targetNamespace.getTable()
         : relOptTable.unwrap(SqlValidatorTable.class);
 
-    RelDataType targetRowType =
+    final RelDataType targetRowType =
         createTargetRowType(
             table,
             call.getTargetColumnList(),
             true);
 
-    SqlSelect select = call.getSourceSelect();
+    final SqlSelect select = call.getSourceSelect();
     validateSelect(select, targetRowType);
 
-    RelDataType sourceRowType = getNamespace(call).getRowType();
+    final RelDataType sourceRowType = getNamespace(call).getRowType();
     checkTypeAssignment(sourceRowType, targetRowType, call);
 
     checkConstraint(table, call, targetRowType);
