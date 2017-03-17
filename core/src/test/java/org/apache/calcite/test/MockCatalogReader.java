@@ -992,13 +992,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
      * A mock of ModifiableViewTable that can unwrap a mock RelOptTable.
      */
     private static class MockModifiableViewTable extends ModifiableViewTable {
-      private final Type elementType;
-      private final String viewSql;
-      private final List<String> schemaPath;
-      private final List<String> viewPath;
-      private final Path tablePath;
       private final RexNode constraint;
-      private final ImmutableIntList columnMapping;
       private final RelDataTypeFactory typeFactory;
 
       MockModifiableViewTable(Type elementType, RelProtoDataType rowType,
@@ -1007,13 +1001,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
           ImmutableIntList columnMapping, RelDataTypeFactory typeFactory) {
         super(elementType, rowType, viewSql, schemaPath, viewPath, table,
             tablePath, constraint, columnMapping, typeFactory);
-        this.elementType = elementType;
-        this.viewSql = viewSql;
-        this.schemaPath = schemaPath;
-        this.viewPath = viewPath;
-        this.tablePath = tablePath;
         this.constraint = constraint;
-        this.columnMapping = columnMapping;
         this.typeFactory = typeFactory;
       }
 
