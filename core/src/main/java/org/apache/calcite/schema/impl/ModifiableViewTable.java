@@ -98,8 +98,7 @@ public class ModifiableViewTable extends ViewTable
   }
 
   /**
-   * Extends the view, extends the underlying table and returns
-   * a new view with updated row-type and column-mapping.
+   * Extends the underlying table and returns a new view with updated row-type and column-mapping.
    */
   public final ModifiableViewTable extend(List<RelDataTypeField> fields) {
     final ExtensibleTable underlying = unwrap(ExtensibleTable.class);
