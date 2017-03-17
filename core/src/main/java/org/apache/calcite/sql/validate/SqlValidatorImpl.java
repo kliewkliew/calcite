@@ -20,6 +20,7 @@ import org.apache.calcite.config.NullCollation;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.DynamicRecordType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -3826,9 +3827,13 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   }
 
   public void validateInsert(SqlInsert insert) {
-    SqlValidatorNamespace targetNamespace = getNamespace(insert);
+    final SqlValidatorNamespace targetNamespace = getNamespace(insert);
     validateNamespace(targetNamespace, unknownType);
-    SqlValidatorTable table = targetNamespace.getTable();
+    final RelOptTable relOptTable = SqlValidatorUtil.getRelOptTable(
+        targetNamespace, catalogReader.unwrap(Prepare.CatalogReader.class), null, null);
+    final SqlValidatorTable table = relOptTable == null
+        ? targetNamespace.getTable()
+        : relOptTable.unwrap(SqlValidatorTable.class);
 
     // INSERT has an optional column name list.  If present then
     // reduce the rowtype to the columns specified.  If not present
@@ -4163,7 +4168,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   public void validateUpdate(SqlUpdate call) {
     final SqlValidatorNamespace targetNamespace = getNamespace(call);
     validateNamespace(targetNamespace, unknownType);
-    SqlValidatorTable table = targetNamespace.getTable();
+    final RelOptTable relOptTable = SqlValidatorUtil.getRelOptTable(
+        targetNamespace, catalogReader.unwrap(Prepare.CatalogReader.class), null, null);
+    final SqlValidatorTable table = relOptTable == null
+        ? targetNamespace.getTable()
+        : relOptTable.unwrap(SqlValidatorTable.class);
 
     RelDataType targetRowType =
         createTargetRowType(

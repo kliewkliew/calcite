@@ -422,23 +422,16 @@ public abstract class Prepare {
       return !rowType.getFieldList().get(ordinal).getType().isNullable();
     }
 
-    public RelOptTable extend(List<RelDataTypeField> extendedFields) {
+    public final RelOptTable extend(List<RelDataTypeField> extendedFields) {
       final Table table = unwrap(Table.class);
       if (table instanceof ExtensibleTable) {
-        return extend((ExtensibleTable) table, extendedFields);
+        return extend(((ExtensibleTable) table).extend(extendedFields));
       } else if (table instanceof ModifiableViewTable) {
-        final Table underlying = ((Wrapper) table).unwrap(Table.class);
-        if (underlying instanceof ExtensibleTable) {
-          return extend((ExtensibleTable) underlying, extendedFields);
-        }
+        final ModifiableViewTable modifiableViewTable = (ModifiableViewTable) table;
+        final ModifiableViewTable extendedView = modifiableViewTable.extend(extendedFields);
+        return extend(extendedView);
       }
       throw new RuntimeException("Cannot extend " + table);
-    }
-
-    private RelOptTable extend(ExtensibleTable table,
-        List<RelDataTypeField> extendedFields) {
-      final Table extendedTable = table.extend(extendedFields);
-      return extend(extendedTable);
     }
 
     /** Implementation-specific code to instantiate a new {@link RelOptTable}

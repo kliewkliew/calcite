@@ -18,6 +18,7 @@ package org.apache.calcite.sql.validate;
 
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.linq4j.Ord;
+import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptSchemaWithSampling;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
@@ -90,37 +91,30 @@ public class SqlValidatorUtil {
       Prepare.CatalogReader catalogReader,
       String datasetName,
       boolean[] usedDataset) {
-    if (!namespace.isWrapperFor(TableNamespace.class)) {
-      return null;
+    if (namespace.isWrapperFor(TableNamespace.class)) {
+      final TableNamespace tableNamespace =
+          namespace.unwrap(TableNamespace.class);
+      return getRelOptTable(tableNamespace, catalogReader, datasetName, usedDataset,
+          tableNamespace.extendedFields);
+    } else if (namespace.isWrapperFor(SqlValidatorImpl.DmlNamespace.class)) {
+      final SqlValidatorImpl.DmlNamespace dmlNamespace = namespace.unwrap(
+          SqlValidatorImpl.DmlNamespace.class);
+      final SqlValidatorNamespace resolvedNamespace = dmlNamespace.resolve();
+      if (resolvedNamespace.isWrapperFor(TableNamespace.class)) {
+        final TableNamespace tableNamespace = resolvedNamespace.unwrap(TableNamespace.class);
+        final SqlValidatorTable validatorTable = tableNamespace.getTable();
+        final RelDataTypeFactory typeFactory = catalogReader.getTypeFactory();
+        final List<RelDataTypeField> extendedFields = dmlNamespace.extendList == null
+            ? ImmutableList.<RelDataTypeField>of()
+            : getExtendedColumns(typeFactory, validatorTable, dmlNamespace.extendList);
+        return getRelOptTable(
+            tableNamespace, catalogReader, datasetName, usedDataset, extendedFields);
+      }
     }
-    final TableNamespace tableNamespace =
-        namespace.unwrap(TableNamespace.class);
-    return getRelOptTable(tableNamespace, catalogReader, datasetName, usedDataset,
-        tableNamespace.extendedFields);
+    return null;
   }
 
-  /**
-   * Overload getRelOptTable to ensure that the extended columns
-   * of the DML namespace are visible in the resulting table.
-   */
-  public static RelOptTable getRelOptTable(
-      SqlValidatorImpl.DmlNamespace namespace,
-      Prepare.CatalogReader catalogReader,
-      String datasetName,
-      boolean[] usedDataset) {
-    final SqlValidatorNamespace resolvedNamespace = namespace.resolve();
-    if (!resolvedNamespace.isWrapperFor(TableNamespace.class)) {
-      return null;
-    }
-    final TableNamespace tableNamespace = resolvedNamespace.unwrap(TableNamespace.class);
-    final SqlValidatorTable validatorTable = tableNamespace.getTable();
-    final List<RelDataTypeField> extendedFields = namespace.extendList == null
-        ? ImmutableList.<RelDataTypeField>of()
-        : getExtendedColumns(catalogReader.getTypeFactory(), validatorTable, namespace.extendList);
-    return getRelOptTable(tableNamespace, catalogReader, datasetName, usedDataset, extendedFields);
-  }
-
-  public static RelOptTable getRelOptTable(
+  private static RelOptTable getRelOptTable(
       TableNamespace tableNamespace,
       Prepare.CatalogReader catalogReader,
       String datasetName,

@@ -16,13 +16,18 @@
  */
 package org.apache.calcite.schema.impl;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.schema.ExtensibleTable;
 import org.apache.calcite.schema.ModifiableView;
 import org.apache.calcite.schema.Path;
 import org.apache.calcite.schema.Table;
@@ -30,6 +35,7 @@ import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
+import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.ImmutableIntList;
 
 import com.google.common.collect.ImmutableMap;
@@ -47,6 +53,7 @@ public class ModifiableViewTable extends ViewTable
   private final Path tablePath;
   private final RexNode constraint;
   private final ImmutableIntList columnMapping;
+  private final RelDataTypeFactory typeFactory;
   private final InitializerExpressionFactory initializerExpressionFactory;
 
   /** Creates a ModifiableViewTable. */
@@ -59,6 +66,7 @@ public class ModifiableViewTable extends ViewTable
     this.tablePath = tablePath;
     this.constraint = constraint;
     this.columnMapping = columnMapping;
+    this.typeFactory = typeFactory;
     this.initializerExpressionFactory =
         new ModifiableViewTableInitializerExpressionFactory(typeFactory);
   }
@@ -90,6 +98,34 @@ public class ModifiableViewTable extends ViewTable
   }
 
   /**
+   * Extends the view, extends the underlying table and returns
+   * a new view with updated row-type and column-mapping.
+   */
+  public final ModifiableViewTable extend(List<RelDataTypeField> fields) {
+    final ExtensibleTable underlying = unwrap(ExtensibleTable.class);
+    assert underlying != null;
+    final RelDataType oldRowType = getRowType(typeFactory);
+
+    final Table extendedTable = underlying.extend(fields);
+    final ImmutableList<RelDataTypeField> allFields =
+        ImmutableList.copyOf(Iterables.concat(oldRowType.getFieldList(), fields));
+    final RelDataType newRowType = typeFactory.createStructType(allFields);
+    final List<Integer> extendedMapping =
+        ImmutableIntList.range(getColumnMapping().size(), getColumnMapping().size() + fields.size());
+    final ImmutableIntList newColumnMapping =
+        ImmutableIntList.copyOf(Iterables.concat(getColumnMapping(), extendedMapping));
+
+    return extend(newRowType, extendedTable, newColumnMapping);
+  }
+
+  protected ModifiableViewTable extend(
+      RelDataType newRowType, Table extendedTable, ImmutableIntList newColumnMapping) {
+    return new ModifiableViewTable(getElementType(), RelDataTypeImpl.proto(newRowType),
+        getViewSql(), getSchemaPath(), getViewPath(), extendedTable, getTablePath(), constraint,
+        newColumnMapping, typeFactory);
+  }
+
+  /**
    * Initializes columns based on the view constraint.
    */
   private class ModifiableViewTableInitializerExpressionFactory
@@ -112,8 +148,9 @@ public class ModifiableViewTable extends ViewTable
 
     @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
       final ModifiableViewTable viewTable = table.unwrap(ModifiableViewTable.class);
-      final RelDataType viewType =
-          viewTable.getRowType(rexBuilder.getTypeFactory());
+      assert (iColumn < viewTable.columnMapping.size());
+      final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
+      final RelDataType viewType = viewTable.getRowType(typeFactory);
       final RelDataType iType = viewType.getFieldList().get(iColumn).getType();
 
       // Use the view constraint to generate the default value if the column is constrained.

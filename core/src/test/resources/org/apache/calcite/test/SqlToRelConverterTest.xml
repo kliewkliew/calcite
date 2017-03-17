@@ -2310,7 +2310,7 @@ LogicalProject(EXPR$0=[+($0, $2)])
         </Resource>
         <Resource name="plan">
             <![CDATA[
-LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], SLACKER=[$8], X=[$9])
+LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], SLACKER=[$7], X=[$8])
   LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
 ]]>
         </Resource>
@@ -2321,7 +2321,7 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
         </Resource>
         <Resource name="plan">
             <![CDATA[
-LogicalProject(X=[$9], EMPNO=[$0])
+LogicalProject(X=[$8], EMPNO=[$0])
   LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
 ]]>
         </Resource>
@@ -2332,7 +2332,7 @@ LogicalProject(X=[$9], EMPNO=[$0])
         </Resource>
         <Resource name="plan">
             <![CDATA[
-LogicalProject(EXPR$0=[+($0, $9)])
+LogicalProject(EXPR$0=[+($0, $8)])
   LogicalTableScan(table=[[CATALOG, SALES, EMP_MODIFIABLEVIEW]])
 ]]>
         </Resource>

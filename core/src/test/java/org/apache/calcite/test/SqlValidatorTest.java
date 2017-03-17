@@ -9150,9 +9150,37 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         + "  1, false, 100, false)").ok();
   }
 
+  @Test public void testInsertExtendedColumnModifiableView() {
+    sql("insert into EMP_MODIFIABLEVIEW2(extra2 BOOLEAN, note VARCHAR)"
+        + " (deptno, empno, ename, extra2, note) values (20, 10, '2', true, 'ok')").ok();
+    sql("insert into EMP_MODIFIABLEVIEW2(\"rank\" INT, extra2 BOOLEAN)"
+        + " values ('nom', 1, 'job', 20, true, 0, false, timestamp '1970-01-01 00:00:00', 1, 1,"
+        + "  1, false)").ok();
+  }
+
+  @Test public void testInsertExtendedColumnModifiableViewFailConstraint() {
+    tester.checkQueryFails("insert into EMP_MODIFIABLEVIEW2(extra2 BOOLEAN, note VARCHAR)"
+        + " (deptno, empno, ename, extra2, note) values (^1^, 10, '2', true, 'ok')",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
+    tester.checkQueryFails("insert into EMP_MODIFIABLEVIEW2(\"rank\" INT, extra2 BOOLEAN)"
+        + " values ('nom', 1, 'job', ^0^, true, 0, false, timestamp '1970-01-01 00:00:00', 1, 1,"
+            + "  1, false)",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
+  }
+
+  @Test public void testInsertExtendedColumnModifiableViewFailColumnCount() {
+    tester.checkQueryFails("insert into EMP_MODIFIABLEVIEW2(\"rank\" INT, extra2 BOOLEAN^)^"
+            + " values ('nom', 1, 'job', 0, true, 0, false, timestamp '1970-01-01 00:00:00', 1, 1,"
+            + "  1)",
+        "Number of INSERT target columns \\(12\\) does not equal number of source items \\(11\\)");
+  }
+
   //TODO: test failure cases
   // modifiable view constraint violation
   // column excluded from view
+  // collision between ext col of DML and ext col of view and/or table
   // test delete
   // test merge
   // converter tests
@@ -9164,6 +9192,28 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     sql("update empdefaults(extra BOOLEAN)"
         + " set extra = true, deptno = 1, ename = 'Bob'"
         + " where deptno = 10").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableView() {
+    sql("update EMP_MODIFIABLEVIEW2(extra2 BOOLEAN, note VARCHAR)"
+        + " set deptno = 20, extra = true, empno = 20, ename = 'Bob', note = 'legion'"
+        + " where ename = 'Jane'").ok();
+    sql("update EMP_MODIFIABLEVIEW2(extra2 BOOLEAN)"
+        + " set extra = true, ename = 'Bob'"
+        + " where ename = 'Jane'").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewFailConstraint() {
+    tester.checkQueryFails("update EMP_MODIFIABLEVIEW2(extra2 BOOLEAN, note VARCHAR)"
+            + " set deptno = ^1^, extra = true, empno = 20, ename = 'Bob', note = 'legion'"
+            + " where ename = 'Jane'",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
+    tester.checkQueryFails("update EMP_MODIFIABLEVIEW2(extra2 BOOLEAN)"
+            + " set extra = true, deptno = ^1^, ename = 'Bob'"
+            + " where ename = 'Jane'",
+        "Modifiable view constraint is not satisfied"
+            + " for column 'DEPTNO' of base table 'EMP_MODIFIABLEVIEW2'");
   }
 }
 
