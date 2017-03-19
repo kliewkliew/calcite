@@ -425,7 +425,8 @@ public abstract class Prepare {
     public final RelOptTable extend(List<RelDataTypeField> extendedFields) {
       final Table table = unwrap(Table.class);
       if (table instanceof ExtensibleTable) {
-        return extend(((ExtensibleTable) table).extend(extendedFields));
+        final Table extendedTable = ((ExtensibleTable) table).extend(extendedFields);
+        return extend(extendedTable);
       } else if (table instanceof ModifiableViewTable) {
         final ModifiableViewTable modifiableViewTable = (ModifiableViewTable) table;
         final ModifiableViewTable extendedView = modifiableViewTable.extend(extendedFields);

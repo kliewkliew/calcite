@@ -1589,6 +1589,27 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testInsertBindExtendedColumn() {
+    final String sql = "insert into empdefaults(updated TIMESTAMP)"
+        + " (ename, deptno, empno, updated, sal)"
+        + " values ('Fred', 456, 44, ?, 999999)";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertExtendedColumnModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW2(updated TIMESTAMP)"
+        + " (ename, deptno, empno, updated, sal)"
+        + " values ('Fred', 20, 44, timestamp '2017-03-12 13:03:05', 999999)";
+    sql(sql).ok();
+  }
+
+  @Test public void testInsertBindExtendedColumnModifiableView() {
+    final String sql = "insert into EMP_MODIFIABLEVIEW2(updated TIMESTAMP)"
+        + " (ename, deptno, empno, updated, sal)"
+        + " values ('Fred', 20, 44, ?, 999999)";
+    sql(sql).ok();
+  }
+
   @Test public void testDelete() {
     final String sql = "delete from emp";
     sql(sql).ok();
@@ -1596,6 +1617,26 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   @Test public void testDeleteWhere() {
     final String sql = "delete from emp where deptno = 10";
+    sql(sql).ok();
+  }
+
+  @Test public void testDeleteBind() {
+    final String sql = "delete from emp where deptno = ?";
+    sql(sql).ok();
+  }
+
+  @Test public void testDeleteBindExtendedColumn() {
+    final String sql = "delete from emp(enddate TIMESTAMP) where enddate < ?";
+    sql(sql).ok();
+  }
+
+  @Test public void testDeleteBindModifiableView() {
+    final String sql = "delete from EMP_MODIFIABLEVIEW2 where empno = ?";
+    sql(sql).ok();
+  }
+
+  @Test public void testDeleteBindExtendedColumnModifiableView() {
+    final String sql = "delete from EMP_MODIFIABLEVIEW2(note VARCHAR) where note = ?";
     sql(sql).ok();
   }
 
@@ -1617,10 +1658,41 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testUpdateModifiableView() {
+    final String sql = "update EMP_MODIFIABLEVIEW2 set sal = sal + 5000 where slacker = false";
+    sql(sql).ok();
+  }
+
   @Test public void testUpdateExtendedColumn() {
     final String sql = "update empdefaults(updated TIMESTAMP)"
         + " set deptno = 1, updated = timestamp '2017-03-12 13:03:05', empno = 20, ename = 'Bob'"
         + " where deptno = 10";
+    sql(sql).ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableView() {
+    final String sql = "update EMP_MODIFIABLEVIEW2(updated TIMESTAMP)"
+        + " set updated = timestamp '2017-03-12 13:03:05', sal = sal + 5000 where slacker = false";
+    sql(sql).ok();
+  }
+
+  @Test public void testUpdateBind() {
+    final String sql = "update emp"
+        + " set sal = sal + ? where slacker = false";
+    sql(sql).ok();
+  }
+
+  @Ignore("CALCITE-1708")
+  @Test public void testUpdateBindExtendedColumn() {
+    final String sql = "update emp(test INT)"
+        + " set test = ?, sal = sal + 5000 where slacker = false";
+    sql(sql).ok();
+  }
+
+  @Ignore("CALCITE-1708")
+  @Test public void testUpdateBindExtendedColumnModifiableView() {
+    final String sql = "update EMP_MODIFIABLEVIEW2(test INT)"
+        + " set test = ?, sal = sal + 5000 where slacker = false";
     sql(sql).ok();
   }
 
