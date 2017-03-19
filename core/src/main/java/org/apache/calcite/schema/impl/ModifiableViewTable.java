@@ -16,8 +16,6 @@
  */
 package org.apache.calcite.schema.impl;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.type.RelDataType;
@@ -35,10 +33,11 @@ import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql2rel.InitializerExpressionFactory;
 import org.apache.calcite.sql2rel.NullInitializerExpressionFactory;
-import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.ImmutableIntList;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import java.lang.reflect.Type;
@@ -109,8 +108,8 @@ public class ModifiableViewTable extends ViewTable
     final ImmutableList<RelDataTypeField> allFields =
         ImmutableList.copyOf(Iterables.concat(oldRowType.getFieldList(), fields));
     final RelDataType newRowType = typeFactory.createStructType(allFields);
-    final List<Integer> extendedMapping =
-        ImmutableIntList.range(getColumnMapping().size(), getColumnMapping().size() + fields.size());
+    final List<Integer> extendedMapping = ImmutableIntList.range(
+        getColumnMapping().size(), getColumnMapping().size() + fields.size());
     final ImmutableIntList newColumnMapping =
         ImmutableIntList.copyOf(Iterables.concat(getColumnMapping(), extendedMapping));
 
@@ -147,7 +146,7 @@ public class ModifiableViewTable extends ViewTable
 
     @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
       final ModifiableViewTable viewTable = table.unwrap(ModifiableViewTable.class);
-      assert (iColumn < viewTable.columnMapping.size());
+      assert iColumn < viewTable.columnMapping.size();
       final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
       final RelDataType viewType = viewTable.getRowType(typeFactory);
       final RelDataType iType = viewType.getFieldList().get(iColumn).getType();

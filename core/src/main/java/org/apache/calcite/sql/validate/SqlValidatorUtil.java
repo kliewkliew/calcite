@@ -18,7 +18,6 @@ package org.apache.calcite.sql.validate;
 
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.linq4j.Ord;
-import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptSchemaWithSampling;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;

@@ -955,9 +955,9 @@ public class MockCatalogReader extends CalciteCatalogReader {
     }
 
     @Override protected RelOptTable extend(Table extendedTable) {
-      return new MockModifiableViewRelOptTable((MockModifiableViewTable) extendedTable, catalogReader,
-          stream, rowCount, columnList, keyList, rowType, collationList, names, monotonicColumnSet,
-          kind, resolver, initializerFactory);
+      return new MockModifiableViewRelOptTable((MockModifiableViewTable) extendedTable,
+          catalogReader, stream, rowCount, columnList, keyList, rowType, collationList, names,
+          monotonicColumnSet, kind, resolver, initializerFactory);
     }
 
     @Override public <T> T unwrap(Class<T> clazz) {
