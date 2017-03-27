@@ -52,22 +52,19 @@ public class ModifiableViewTable extends ViewTable
   private final Path tablePath;
   private final RexNode constraint;
   private final ImmutableIntList columnMapping;
-  private final RelDataTypeFactory typeFactory;
   private final InitializerExpressionFactory initializerExpressionFactory;
 
   /** Creates a ModifiableViewTable. */
   public ModifiableViewTable(Type elementType, RelProtoDataType rowType,
       String viewSql, List<String> schemaPath, List<String> viewPath,
       Table table, Path tablePath, RexNode constraint,
-      ImmutableIntList columnMapping, RelDataTypeFactory typeFactory) {
+      ImmutableIntList columnMapping) {
     super(elementType, rowType, viewSql, schemaPath, viewPath);
     this.table = table;
     this.tablePath = tablePath;
     this.constraint = constraint;
     this.columnMapping = columnMapping;
-    this.typeFactory = typeFactory;
-    this.initializerExpressionFactory =
-        new ModifiableViewTableInitializerExpressionFactory(typeFactory);
+    this.initializerExpressionFactory = new ModifiableViewTableInitializerExpressionFactory();
   }
 
   public RexNode getConstraint(RexBuilder rexBuilder,
@@ -99,7 +96,8 @@ public class ModifiableViewTable extends ViewTable
   /**
    * Extends the underlying table and returns a new view with updated row-type and column-mapping.
    */
-  public final ModifiableViewTable extend(List<RelDataTypeField> fields) {
+  public final ModifiableViewTable extend(
+      List<RelDataTypeField> fields, RelDataTypeFactory typeFactory) {
     final ExtensibleTable underlying = unwrap(ExtensibleTable.class);
     assert underlying != null;
     final RelDataType oldRowType = getRowType(typeFactory);
@@ -120,7 +118,7 @@ public class ModifiableViewTable extends ViewTable
       RelDataType newRowType, Table extendedTable, ImmutableIntList newColumnMapping) {
     return new ModifiableViewTable(getElementType(), RelDataTypeImpl.proto(newRowType),
         getViewSql(), getSchemaPath(), getViewPath(), extendedTable, getTablePath(), constraint,
-        newColumnMapping, typeFactory);
+        newColumnMapping);
   }
 
   /**
@@ -130,8 +128,8 @@ public class ModifiableViewTable extends ViewTable
       extends NullInitializerExpressionFactory {
     private final ImmutableMap<Integer, RexNode> projectMap;
 
-    private ModifiableViewTableInitializerExpressionFactory(RelDataTypeFactory typeFactory) {
-      super(typeFactory);
+    private ModifiableViewTableInitializerExpressionFactory() {
+      super();
       final Map<Integer, RexNode> projectMap = Maps.newHashMap();
       final List<RexNode> filters = new ArrayList<>();
       RelOptUtil.inferViewPredicates(projectMap, filters, constraint);
@@ -144,7 +142,8 @@ public class ModifiableViewTable extends ViewTable
       return false;
     }
 
-    @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn) {
+    @Override public RexNode newColumnDefaultValue(RelOptTable table, int iColumn,
+        RexBuilder rexBuilder) {
       final ModifiableViewTable viewTable = table.unwrap(ModifiableViewTable.class);
       assert iColumn < viewTable.columnMapping.size();
       final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
@@ -165,17 +164,17 @@ public class ModifiableViewTable extends ViewTable
             ((Wrapper) schemaTable).unwrap(InitializerExpressionFactory.class);
         if (initializerExpressionFactory != null) {
           final RexNode tableConstraint =
-              initializerExpressionFactory.newColumnDefaultValue(table, iColumn);
+              initializerExpressionFactory.newColumnDefaultValue(table, iColumn, rexBuilder);
           return rexBuilder.ensureType(iType, tableConstraint, true);
         }
       }
 
       // Otherwise Sql type of NULL.
-      return super.newColumnDefaultValue(table, iColumn);
+      return super.newColumnDefaultValue(table, iColumn, rexBuilder);
     }
 
-    @Override public RexNode newAttributeInitializer(RelDataType type,
-        SqlFunction constructor, int iAttribute, List<RexNode> constructorArgs) {
+    @Override public RexNode newAttributeInitializer(RelDataType type, SqlFunction constructor,
+        int iAttribute, List<RexNode> constructorArgs, RexBuilder rexBuilder) {
       throw new UnsupportedOperationException("Not implemented - unknown requirements");
     }
   }

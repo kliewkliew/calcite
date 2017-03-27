@@ -35,6 +35,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexExecutorImpl;
 import org.apache.calcite.runtime.Bindable;
@@ -405,14 +406,15 @@ public abstract class Prepare {
    * for {@link #columnHasDefaultValue}. */
   public abstract static class AbstractPreparingTable
       implements PreparingTable {
-    public boolean columnHasDefaultValue(RelDataType rowType, int ordinal) {
+    public boolean columnHasDefaultValue(RelDataType rowType, int ordinal,
+            RexBuilderHolder rexBuilderHolder) {
       final Table table = this.unwrap(Table.class);
       if (table != null && table instanceof Wrapper) {
         final InitializerExpressionFactory initializerExpressionFactory =
             ((Wrapper) table).unwrap(InitializerExpressionFactory.class);
         if (initializerExpressionFactory != null) {
           return !initializerExpressionFactory
-              .newColumnDefaultValue(this, ordinal)
+              .newColumnDefaultValue(this, ordinal, rexBuilderHolder.rexBuilder)
               .getType().getSqlTypeName().equals(SqlTypeName.NULL);
         }
       }
@@ -422,14 +424,16 @@ public abstract class Prepare {
       return !rowType.getFieldList().get(ordinal).getType().isNullable();
     }
 
-    public final RelOptTable extend(List<RelDataTypeField> extendedFields) {
+    public final RelOptTable extend(List<RelDataTypeField> extendedFields,
+            RelDataTypeFactory typeFactory) {
       final Table table = unwrap(Table.class);
       if (table instanceof ExtensibleTable) {
         final Table extendedTable = ((ExtensibleTable) table).extend(extendedFields);
         return extend(extendedTable);
       } else if (table instanceof ModifiableViewTable) {
         final ModifiableViewTable modifiableViewTable = (ModifiableViewTable) table;
-        final ModifiableViewTable extendedView = modifiableViewTable.extend(extendedFields);
+        final ModifiableViewTable extendedView =
+            modifiableViewTable.extend(extendedFields, typeFactory);
         return extend(extendedView);
       }
       throw new RuntimeException("Cannot extend " + table);

@@ -131,7 +131,7 @@ public class SqlValidatorUtil {
       table = catalogReader.getTableForMember(names);
     }
     if (!extendedFields.isEmpty()) {
-      table = table.extend(extendedFields);
+      table = table.extend(extendedFields, catalogReader.getTypeFactory());
     }
     return table;
   }

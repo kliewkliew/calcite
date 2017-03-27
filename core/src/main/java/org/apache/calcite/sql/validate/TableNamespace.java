@@ -78,15 +78,17 @@ class TableNamespace extends AbstractNamespace {
    * <p>Extended fields are "hidden" or undeclared fields that may nevertheless
    * be present if you ask for them. Phoenix uses them, for instance, to access
    * rarely used fields in the underlying HBase table. */
-  public TableNamespace extend(List<RelDataTypeField> extendedFields) {
+  public TableNamespace extend(List<RelDataTypeField> extendedFields,
+      RelDataTypeFactory typeFactory) {
     final Table schemaTable = table.unwrap(Table.class);
     if (schemaTable != null
         && table instanceof RelOptTable
         && schemaTable instanceof ExtensibleTable) {
-      final SqlValidatorTable validatorTable =
+      final RelOptTable relOptTable =
           ((RelOptTable) table).extend(ImmutableList.copyOf(
-              Iterables.concat(this.extendedFields, extendedFields)))
-          .unwrap(SqlValidatorTable.class);
+              Iterables.concat(this.extendedFields, extendedFields)),
+              typeFactory);
+      final SqlValidatorTable validatorTable = relOptTable.unwrap(SqlValidatorTable.class);
       return new TableNamespace(
           validator, validatorTable, ImmutableList.<RelDataTypeField>of());
     }

@@ -2153,7 +2153,7 @@ public class SqlToRelConverter {
       final List<RelDataTypeField> extendedFields =
           SqlValidatorUtil.getExtendedColumns(validator.getTypeFactory(), validatorTable,
               extendedColumns);
-      table = table.extend(extendedFields);
+      table = table.extend(extendedFields, validator.getTypeFactory());
     }
     final RelNode tableRel;
     if (config.isConvertTableAccess()) {
@@ -3185,7 +3185,7 @@ public class SqlToRelConverter {
         continue;
       }
       sourceExps.set(i,
-          initializerFactory.newColumnDefaultValue(targetTable, i));
+          initializerFactory.newColumnDefaultValue(targetTable, i, getRexBuilder()));
 
       // bare nulls are dangerous in the wrong hands
       sourceExps.set(i,
@@ -3206,7 +3206,7 @@ public class SqlToRelConverter {
         return f;
       }
     }
-    return new NullInitializerExpressionFactory(typeFactory);
+    return new NullInitializerExpressionFactory();
   }
 
   private static <T> T unwrap(Object o, Class<T> clazz) {
@@ -3834,7 +3834,7 @@ public class SqlToRelConverter {
     final boolean top;
 
     private final InitializerExpressionFactory initializerExpressionFactory =
-        new NullInitializerExpressionFactory(typeFactory);
+        new NullInitializerExpressionFactory();
 
     /**
      * Creates a Blackboard.

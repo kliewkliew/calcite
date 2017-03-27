@@ -3197,6 +3197,14 @@ public class SqlParserTest {
         .ok(expected);
   }
 
+  @Test public void testInsertExtendedColumnList() {
+    final String expected = "INSERT INTO `EMPS` EXTEND (`Z` BOOLEAN) (`X`, `Y`)\n"
+        + "(SELECT *\n"
+        + "FROM `EMPS`)";
+    sql("insert into emps (z boolean) (x,y) select * from emps")
+        .ok(expected);
+  }
+
   @Test public void testExplainInsert() {
     final String expected = "EXPLAIN PLAN INCLUDING ATTRIBUTES"
         + " WITH IMPLEMENTATION FOR\n"

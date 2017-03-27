@@ -4024,13 +4024,15 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
           RESOURCE.unmatchInsertColumn(targetFieldCount, sourceFieldCount));
     }
     // Ensure that non-nullable fields are targeted.
+    final SqlValidatorTable.RexBuilderHolder rexBuilder =
+        new SqlValidatorTable.RexBuilderHolder(typeFactory);
     for (final RelDataTypeField field : table.getRowType().getFieldList()) {
       if (!field.getType().isNullable()) {
         final RelDataTypeField targetField =
             logicalTargetRowType.getField(field.getName(), true, false);
         if (targetField == null
             && !table.columnHasDefaultValue(table.getRowType(),
-                field.getIndex())) {
+                field.getIndex(), rexBuilder)) {
           throw newValidationError(node,
               RESOURCE.columnNotNullable(field.getName()));
         }
