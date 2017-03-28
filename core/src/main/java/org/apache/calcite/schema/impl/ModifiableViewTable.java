@@ -39,10 +39,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -109,20 +110,22 @@ public class ModifiableViewTable extends ViewTable
         Iterables.unmodifiableIterable(Iterables.concat(oldRowType.getFieldList(), fields));
 
     // Find the set of extended fields that do not duplicate a view column.
-    final LinkedHashMap<String, RelDataTypeField> dedupedFieldsMap =
-        Maps.newLinkedHashMapWithExpectedSize(oldRowType.getFieldCount() + fields.size());
+    final HashSet<String> dedupedFieldNames =
+        Sets.newHashSetWithExpectedSize(oldRowType.getFieldCount() + fields.size());
+    final ImmutableList.Builder<RelDataTypeField> dedupedFieldsBuilder =
+        ImmutableList.builder();
     for (RelDataTypeField field : allFields) {
-      if (!dedupedFieldsMap.containsKey(field.getName())) {
-        dedupedFieldsMap.put(field.getName(), field);
+      if (!dedupedFieldNames.contains(field.getName())) {
+        dedupedFieldNames.add(field.getName());
+        dedupedFieldsBuilder.add(field);
       }
     }
-
-    // The characteristics of the new view.
-    final ImmutableList<RelDataTypeField> dedupedFields =
-        ImmutableList.copyOf(dedupedFieldsMap.values());
-    final RelDataType newRowType = typeFactory.createStructType(dedupedFields);
+    final ImmutableList<RelDataTypeField> dedupedFields = dedupedFieldsBuilder.build();
     final ImmutableList<RelDataTypeField> dedupedExtendedFields =
         dedupedFields.subList(getColumnMapping().size(), dedupedFields.size());
+
+    // The characteristics of the new view.
+    final RelDataType newRowType = typeFactory.createStructType(dedupedFields);
     final ImmutableIntList newColumnMapping =
         getNewColumnMapping(underlying, getColumnMapping(), dedupedExtendedFields, typeFactory);
 
@@ -135,10 +138,15 @@ public class ModifiableViewTable extends ViewTable
     return extend(extendedTable, newRowType, newColumnMapping);
   }
 
+  /**
+   * Get the set of extended columns that do not duplicate a column in the
+   * underlying table.
+   */
   private static List<RelDataTypeField> getExtendedColumnsForBaseTable(
-      ExtensibleTable underlying, List<RelDataTypeField> extendedColumns,
+      Table underlying, List<RelDataTypeField> extendedColumns,
       RelDataTypeFactory typeFactory) {
-    final List<RelDataTypeField> baseColumns = underlying.getRowType(typeFactory).getFieldList();
+    final List<RelDataTypeField> baseColumns =
+        underlying.getRowType(typeFactory).getFieldList();
     final Map<String, Integer> nameToIndex = mapNameToIndex(baseColumns);
 
     final ImmutableList.Builder<RelDataTypeField> outputCols =
@@ -154,10 +162,11 @@ public class ModifiableViewTable extends ViewTable
   /**
    * Creates a mapping from the view index to the index in the underlying table.
    */
-  private static ImmutableIntList getNewColumnMapping(ExtensibleTable underlying,
+  private static ImmutableIntList getNewColumnMapping(Table underlying,
       ImmutableIntList oldColumnMapping, ImmutableList<RelDataTypeField> extendedColumns,
       RelDataTypeFactory typeFactory) {
-    final List<RelDataTypeField> baseColumns = underlying.getRowType(typeFactory).getFieldList();
+    final List<RelDataTypeField> baseColumns =
+        underlying.getRowType(typeFactory).getFieldList();
     final Map<String, Integer> nameToIndex = mapNameToIndex(baseColumns);
 
     final ImmutableList.Builder<Integer> newMapping = ImmutableList.builder();
@@ -166,9 +175,10 @@ public class ModifiableViewTable extends ViewTable
     for (RelDataTypeField extendedColumn : extendedColumns) {
       if (nameToIndex.containsKey(extendedColumn.getName())) {
         // The extended column duplicates a column in the underlying table.
+        // Map to the index in the underlying table.
         newMapping.add(nameToIndex.get(extendedColumn.getName()));
       } else {
-        // The extended column in not in the underlying table.
+        // The extended column is not in the underlying table.
         newMapping.add(newMappedIndex++);
       }
     }
