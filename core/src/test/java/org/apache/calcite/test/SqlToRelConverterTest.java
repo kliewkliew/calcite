@@ -782,6 +782,30 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+  @Test public void testSelectViewExtendedColumnCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR\n"
+        + " from EMP_MODIFIABLEVIEW3 extend (SAL int)\n"
+        + " where SAL = 20").ok();
+  }
+
+  @Test public void testSelectViewExtendedColumnUnderlyingCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR, COMM\n"
+        + " from EMP_MODIFIABLEVIEW3 extend (COMM int)\n"
+        + " where SAL = 20").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnCollision() {
+    sql("update empdefaults(empno INTEGER NOT NULL, deptno INTEGER)"
+        + " set deptno = 1, empno = 20, ename = 'Bob'"
+        + " where deptno = 10").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewCollision() {
+    sql("update EMP_MODIFIABLEVIEW3(empno INTEGER NOT NULL, deptno INTEGER)"
+        + " set deptno = 1, empno = 20, ename = 'Bob'"
+        + " where deptno = 10").ok();
+  }
+
   @Test public void testSelectModifiableViewConstraint() {
     final String sql = "select deptno from EMP_MODIFIABLEVIEW2 where deptno = ?";
     sql(sql).ok();

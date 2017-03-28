@@ -198,10 +198,9 @@ public class IdentifierNamespace extends AbstractNamespace {
       if (!(resolvedNamespace instanceof TableNamespace)) {
         throw new RuntimeException("cannot convert");
       }
-      final List<RelDataTypeField> extendedFields =
-          SqlValidatorUtil.getExtendedColumns(validator.getTypeFactory(), getTable(), extendList);
       resolvedNamespace =
-          ((TableNamespace) resolvedNamespace).extend(extendedFields, validator.getTypeFactory());
+          ((TableNamespace) resolvedNamespace).extend(extendList,
+              validator.getTypeFactory());
       rowType = resolvedNamespace.getRowType();
     }
 

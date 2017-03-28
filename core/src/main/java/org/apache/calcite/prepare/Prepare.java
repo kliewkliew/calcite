@@ -428,10 +428,12 @@ public abstract class Prepare {
             RelDataTypeFactory typeFactory) {
       final Table table = unwrap(Table.class);
       if (table instanceof ExtensibleTable) {
-        final Table extendedTable = ((ExtensibleTable) table).extend(extendedFields);
+        final Table extendedTable =
+                ((ExtensibleTable) table).extend(extendedFields);
         return extend(extendedTable);
       } else if (table instanceof ModifiableViewTable) {
-        final ModifiableViewTable modifiableViewTable = (ModifiableViewTable) table;
+        final ModifiableViewTable modifiableViewTable =
+                (ModifiableViewTable) table;
         final ModifiableViewTable extendedView =
             modifiableViewTable.extend(extendedFields, typeFactory);
         return extend(extendedView);

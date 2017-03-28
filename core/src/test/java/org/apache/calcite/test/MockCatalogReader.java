@@ -1021,7 +1021,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
       }
 
       @Override public ModifiableViewTable extend(
-          RelDataType newRowType, Table extendedTable, ImmutableIntList newColumnMapping) {
+          Table extendedTable, RelDataType newRowType, ImmutableIntList newColumnMapping) {
         return new MockModifiableViewTable(getElementType(), RelDataTypeImpl.proto(newRowType),
             getViewSql(), getSchemaPath(), getViewPath(), extendedTable, getTablePath(), constraint,
             newColumnMapping, typeFactory);

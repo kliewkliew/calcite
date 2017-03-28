@@ -18,6 +18,7 @@ package org.apache.calcite.sql.validate;
 
 import org.apache.calcite.config.NullCollation;
 import org.apache.calcite.linq4j.Ord;
+import org.apache.calcite.linq4j.function.Function2;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare;
@@ -269,6 +270,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   private boolean validatingSqlMerge;
 
   private boolean inWindow;                        // Allow nested aggregates
+
+  private final SqlValidatorImpl.ValidationErrorFunction validationErrorFunction =
+      new SqlValidatorImpl.ValidationErrorFunction();
 
   //~ Constructors -----------------------------------------------------------
 
@@ -3392,17 +3396,8 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         throw newValidationError(withItem.columnList,
             RESOURCE.columnCountMismatch());
       }
-      final List<String> names = Lists.transform(withItem.columnList.getList(),
-          new Function<SqlNode, String>() {
-            public String apply(SqlNode o) {
-              return ((SqlIdentifier) o).getSimple();
-            }
-          });
-      final int i = Util.firstDuplicate(names);
-      if (i >= 0) {
-        throw newValidationError(withItem.columnList.get(i),
-            RESOURCE.duplicateNameInColumnList(names.get(i)));
-      }
+      SqlValidatorUtil.checkIdentifierListForDuplicates(
+          withItem.columnList.getList(), validationErrorFunction);
     } else {
       // Luckily, field names have not been make unique yet.
       final List<String> fieldNames =
@@ -4361,6 +4356,22 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   }
 
   public void validateDynamicParam(SqlDynamicParam dynamicParam) {
+  }
+
+  /**
+   * Throws a validator exception.
+   */
+  public class ValidationErrorFunction
+      implements Function2<SqlNode, Resources.ExInst<SqlValidatorException>,
+            CalciteContextException> {
+    @Override public CalciteContextException apply(
+        SqlNode v0, Resources.ExInst<SqlValidatorException> v1) {
+      return newValidationError(v0, v1);
+    }
+  }
+
+  public ValidationErrorFunction getValidationErrorFunction() {
+    return validationErrorFunction;
   }
 
   public CalciteContextException newValidationError(SqlNode node,

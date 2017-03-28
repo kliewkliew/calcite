@@ -48,6 +48,7 @@ import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -64,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
  * Utility methods related to validation.
@@ -223,7 +226,7 @@ public class SqlValidatorUtil {
   }
 
   /** Returns a map from field names to indexes. */
-  static Map<String, Integer> mapNameToIndex(List<RelDataTypeField> fields) {
+  public static Map<String, Integer> mapNameToIndex(List<RelDataTypeField> fields) {
     ImmutableMap.Builder<String, Integer> output = ImmutableMap.builder();
     for (RelDataTypeField field : fields) {
       output.put(field.getName(), field.getIndex());
@@ -255,6 +258,24 @@ public class SqlValidatorUtil {
               + colCharset.name() + "'");
         }
       }
+    }
+  }
+
+  /**
+   * Checks that there are no duplicates in a list of {@link SqlIdentifier}.
+   */
+  public static void checkIdentifierListForDuplicates(List<SqlNode> columnList,
+      SqlValidatorImpl.ValidationErrorFunction validationErrorFunction) {
+    final List<String> names = Lists.transform(columnList,
+        new Function<SqlNode, String>() {
+          public String apply(SqlNode o) {
+            return ((SqlIdentifier) o).getSimple();
+          }
+        });
+    final int i = Util.firstDuplicate(names);
+    if (i >= 0) {
+      throw validationErrorFunction.apply(columnList.get(i),
+          RESOURCE.duplicateNameInColumnList(names.get(i)));
     }
   }
 

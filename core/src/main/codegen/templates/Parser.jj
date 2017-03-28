@@ -1992,6 +1992,7 @@ void ColumnType(List<SqlNode> list) :
 {
     name = SimpleIdentifier()
     type = DataType()
+    { type = type.withNullable(true); }
     [ <NOT> <NULL> { type = type.withNullable(false); } ]
     {
         list.add(name);
