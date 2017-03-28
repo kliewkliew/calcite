@@ -3197,11 +3197,27 @@ public class SqlParserTest {
         .ok(expected);
   }
 
+  @Test public void testInsertCaseSensitiveColumnList() {
+    final String expected = "INSERT INTO `emps` (`x`, `y`)\n"
+        + "(SELECT *\n"
+        + "FROM `EMPS`)";
+    sql("insert into \"emps\"(\"x\",\"y\") select * from emps")
+        .ok(expected);
+  }
+
   @Test public void testInsertExtendedColumnList() {
     final String expected = "INSERT INTO `EMPS` EXTEND (`Z` BOOLEAN) (`X`, `Y`)\n"
         + "(SELECT *\n"
         + "FROM `EMPS`)";
-    sql("insert into emps (z boolean) (x,y) select * from emps")
+    sql("insert into emps(z boolean)(x,y) select * from emps")
+        .ok(expected);
+  }
+
+  @Test public void testInsertCaseSensitiveExtendedColumnList() {
+    final String expected = "INSERT INTO `emps` EXTEND (`z` BOOLEAN) (`x`, `y`)\n"
+        + "(SELECT *\n"
+        + "FROM `EMPS`)";
+    sql("insert into \"emps\"(\"z\" boolean)(\"x\",\"y\") select * from emps")
         .ok(expected);
   }
 
