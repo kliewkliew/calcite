@@ -549,7 +549,7 @@ public class MockCatalogReader extends CalciteCatalogReader {
         empModifiableViewNames2.get(2), false, 20, null);
     registerTable(mockEmpViewTable2);
 
-    // Same as "EMP_MODIFIABLEVIEW" except that comm is not in the view
+    // Same as "EMP_MODIFIABLEVIEW" except that comm is not in the view.
     List<String> empModifiableViewNames3 = ImmutableList.of(
         salesSchema.getCatalogName(), salesSchema.name, "EMP_MODIFIABLEVIEW3");
     TableMacro empModifiableViewMacro3 = MockModifiableViewRelOptTable.viewMacro(rootSchema,

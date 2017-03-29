@@ -37,6 +37,7 @@ import org.apache.calcite.util.ImmutableIntList;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import java.lang.reflect.Type;
@@ -103,23 +104,20 @@ public class ModifiableViewTable extends ViewTable
     assert underlying != null;
 
     final List<RelDataTypeField> baseColumns = getRowType(typeFactory).getFieldList();
-
-    final List<RelDataTypeField> dedupedFields =
-        RelOptUtil.deduplicateColumns(baseColumns, extendedColumns);
-    final List<RelDataTypeField> dedupedExtendedFields =
-        dedupedFields.subList(getColumnMapping().size(), dedupedFields.size());
+    final List<RelDataTypeField> allColumns =
+        ImmutableList.copyOf(Iterables.concat(baseColumns, extendedColumns));
 
     // The characteristics of the new view.
-    final RelDataType newRowType = typeFactory.createStructType(dedupedFields);
+    final RelDataType newRowType = typeFactory.createStructType(allColumns);
     final ImmutableIntList newColumnMapping =
-        getNewColumnMapping(underlying, getColumnMapping(), dedupedExtendedFields, typeFactory);
+        getNewColumnMapping(underlying, getColumnMapping(), extendedColumns, typeFactory);
 
     // Extend the underlying table with only the fields that
-    // duplicate columns in neither the view nor the base table.
+    // duplicate column names in neither the view nor the base table.
     final List<RelDataTypeField> underlyingColumns =
         underlying.getRowType(typeFactory).getFieldList();
     final List<RelDataTypeField> columnsOfExtendedBaseTable =
-        RelOptUtil.deduplicateColumns(underlyingColumns, dedupedExtendedFields);
+        RelOptUtil.deduplicateColumns(underlyingColumns, extendedColumns);
     final List<RelDataTypeField> extendColumnsOfBaseTable =
         columnsOfExtendedBaseTable.subList(underlyingColumns.size(), columnsOfExtendedBaseTable.size());
     final Table extendedTable = underlying.extend(extendColumnsOfBaseTable);
@@ -139,7 +137,7 @@ public class ModifiableViewTable extends ViewTable
 
     final ImmutableList.Builder<Integer> newMapping = ImmutableList.builder();
     newMapping.addAll(oldColumnMapping);
-    int newMappedIndex = oldColumnMapping.size();
+    int newMappedIndex = baseColumns.size();
     for (RelDataTypeField extendedColumn : extendedColumns) {
       if (nameToIndex.containsKey(extendedColumn.getName())) {
         // The extended column duplicates a column in the underlying table.

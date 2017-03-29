@@ -424,18 +424,32 @@ public abstract class Prepare {
       return !rowType.getFieldList().get(ordinal).getType().isNullable();
     }
 
+    /**
+     * Extends the table to produce a table that includes the columns of the base
+     * table plus the extended columns that do not have the same name as a column
+     * in the base table.
+     */
     public final RelOptTable extend(List<RelDataTypeField> extendedFields,
             RelDataTypeFactory typeFactory) {
       final Table table = unwrap(Table.class);
+
+      // Get the set of extended columns that do not have the same name as a column
+      // in the base table.
+      final List<RelDataTypeField> baseColumns = getRowType().getFieldList();
+      final List<RelDataTypeField> dedupedFields =
+          RelOptUtil.deduplicateColumns(baseColumns, extendedFields);
+      final List<RelDataTypeField> dedupedExtendedFields =
+          dedupedFields.subList(baseColumns.size(), dedupedFields.size());
+
       if (table instanceof ExtensibleTable) {
         final Table extendedTable =
-                ((ExtensibleTable) table).extend(extendedFields);
+                ((ExtensibleTable) table).extend(dedupedExtendedFields);
         return extend(extendedTable);
       } else if (table instanceof ModifiableViewTable) {
         final ModifiableViewTable modifiableViewTable =
                 (ModifiableViewTable) table;
         final ModifiableViewTable extendedView =
-            modifiableViewTable.extend(extendedFields, typeFactory);
+            modifiableViewTable.extend(dedupedExtendedFields, typeFactory);
         return extend(extendedView);
       }
       throw new RuntimeException("Cannot extend " + table);

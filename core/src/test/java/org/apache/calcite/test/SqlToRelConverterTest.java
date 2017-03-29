@@ -830,10 +830,40 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
         + " where deptno = 10").ok();
   }
 
+  @Test public void testUpdateExtendedColumnCaseSensitiveCollision() {
+    sql("update empdefaults(\"slacker\" INTEGER, deptno INTEGER)"
+        + " set deptno = 1, \"slacker\" = 100"
+        + " where ename = 'Bob'").ok();
+  }
+
   @Test public void testUpdateExtendedColumnModifiableViewCollision() {
     sql("update EMP_MODIFIABLEVIEW3(empno INTEGER NOT NULL, deptno INTEGER)"
         + " set deptno = 20, empno = 20, ename = 'Bob'"
         + " where empno = 10").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewCaseSensitiveCollision() {
+    sql("update EMP_MODIFIABLEVIEW2(\"slacker\" INTEGER, deptno INTEGER)"
+        + " set deptno = 20, \"slacker\" = 100"
+        + " where ename = 'Bob'").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewExtendedCollision() {
+    sql("update EMP_MODIFIABLEVIEW2(\"slacker\" INTEGER, extra BOOLEAN)"
+        + " set deptno = 20, \"slacker\" = 100, extra = true"
+        + " where ename = 'Bob'").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewExtendedCaseSensitiveCollision() {
+    sql("update EMP_MODIFIABLEVIEW2(\"extra\" INTEGER, extra BOOLEAN)"
+        + " set deptno = 20, \"extra\" = 100, extra = true"
+        + " where ename = 'Bob'").ok();
+  }
+
+  @Test public void testUpdateExtendedColumnModifiableViewUnderlyingCollision() {
+    sql("update EMP_MODIFIABLEVIEW3(extra BOOLEAN, comm INTEGER)"
+        + " set empno = 20, comm = true, extra = true"
+        + " where ename = 'Bob'").ok();
   }
 
   @Test public void testSelectModifiableViewConstraint() {
