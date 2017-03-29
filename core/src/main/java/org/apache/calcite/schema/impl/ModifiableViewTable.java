@@ -119,7 +119,8 @@ public class ModifiableViewTable extends ViewTable
     final List<RelDataTypeField> columnsOfExtendedBaseTable =
         RelOptUtil.deduplicateColumns(underlyingColumns, extendedColumns);
     final List<RelDataTypeField> extendColumnsOfBaseTable =
-        columnsOfExtendedBaseTable.subList(underlyingColumns.size(), columnsOfExtendedBaseTable.size());
+        columnsOfExtendedBaseTable.subList(
+            underlyingColumns.size(), columnsOfExtendedBaseTable.size());
     final Table extendedTable = underlying.extend(extendColumnsOfBaseTable);
 
     return extend(extendedTable, newRowType, newColumnMapping);

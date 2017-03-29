@@ -8432,10 +8432,6 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         "Number of INSERT target columns \\(9\\) does not equal number of source items \\(2\\)");
   }
 
-  @Test public void testSelectExtendedColumnFamily() {
-    sql("select deptno, fam.col from emp (fam.col int)").ok();
-  }
-
   @Test public void testSelectExtendedColumnDuplicate() {
     sql("select deptno, extra from emp (extra int, \"extra\" boolean)").ok();
     sql("select deptno, extra from emp (extra int, \"extra\" int)").ok();

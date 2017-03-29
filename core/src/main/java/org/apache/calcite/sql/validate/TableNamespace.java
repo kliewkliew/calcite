@@ -112,6 +112,10 @@ class TableNamespace extends AbstractNamespace {
             Iterables.concat(this.extendedFields, extendedFields)));
   }
 
+  /**
+   * Gets the data-type of all columns in a table (for a view table: including
+   * columns of the underlying table)
+   */
   private RelDataType getBaseRowType() {
     final Table schemaTable = table.unwrap(Table.class);
     if (schemaTable instanceof ModifiableViewTable) {
@@ -123,6 +127,10 @@ class TableNamespace extends AbstractNamespace {
     return schemaTable.getRowType(validator.typeFactory);
   }
 
+  /**
+   * Ensures that extended columns that have the same name as a base column also
+   * have the same data-type.
+   */
   private void checkExtendedColumnTypes(SqlNodeList extendList) {
     final List<RelDataTypeField> extendedFields =
         SqlValidatorUtil.getExtendedColumns(
@@ -147,7 +155,6 @@ class TableNamespace extends AbstractNamespace {
                 final SqlIdentifier identifier = (SqlIdentifier) sqlNode;
                 return Util.last(identifier.names).equals(extendedField.getName());
               }
-              // TODO: use name matcher?
               return false;
             }
           };
