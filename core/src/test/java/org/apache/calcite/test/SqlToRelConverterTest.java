@@ -784,14 +784,44 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   @Test public void testSelectViewExtendedColumnCollision() {
     sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR\n"
+        + " from EMP_MODIFIABLEVIEW3\n"
+        + " where SAL = 20").ok();
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR\n"
         + " from EMP_MODIFIABLEVIEW3 extend (SAL int)\n"
         + " where SAL = 20").ok();
+  }
+
+  @Test public void testSelectViewExtendedColumnCaseSensitiveCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, \"sal\", HIREDATE, MGR\n"
+        + " from EMP_MODIFIABLEVIEW3 extend (\"sal\" boolean)\n"
+        + " where \"sal\" = true").ok();
+  }
+
+  @Test public void testSelectViewExtendedColumnExtendedCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, EXTRA\n"
+        + " from EMP_MODIFIABLEVIEW2\n"
+        + " where SAL = 20").ok();
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, EXTRA\n"
+        + " from EMP_MODIFIABLEVIEW2 extend (EXTRA boolean)\n"
+        + " where SAL = 20").ok();
+  }
+
+  @Test public void testSelectViewExtendedColumnCaseSensitiveExtendedCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, \"extra\"\n"
+        + " from EMP_MODIFIABLEVIEW2 extend (\"extra\" boolean)\n"
+        + " where \"extra\" = false").ok();
   }
 
   @Test public void testSelectViewExtendedColumnUnderlyingCollision() {
     sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR, COMM\n"
         + " from EMP_MODIFIABLEVIEW3 extend (COMM int)\n"
         + " where SAL = 20").ok();
+  }
+
+  @Test public void testSelectViewExtendedColumnCaseSensitiveUnderlyingCollision() {
+    sql("select ENAME, EMPNO, JOB, SLACKER, SAL, HIREDATE, MGR, \"comm\"\n"
+        + " from EMP_MODIFIABLEVIEW3 extend (\"comm\" int)\n"
+        + " where \"comm\" = 20").ok();
   }
 
   @Test public void testUpdateExtendedColumnCollision() {
@@ -802,8 +832,8 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   @Test public void testUpdateExtendedColumnModifiableViewCollision() {
     sql("update EMP_MODIFIABLEVIEW3(empno INTEGER NOT NULL, deptno INTEGER)"
-        + " set deptno = 1, empno = 20, ename = 'Bob'"
-        + " where deptno = 10").ok();
+        + " set deptno = 20, empno = 20, ename = 'Bob'"
+        + " where empno = 10").ok();
   }
 
   @Test public void testSelectModifiableViewConstraint() {

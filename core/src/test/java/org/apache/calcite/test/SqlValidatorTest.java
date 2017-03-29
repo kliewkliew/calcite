@@ -9364,7 +9364,8 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         "Cannot assign to target field 'EMPNO' of type INTEGER"
             + " from source field 'EXPR\\$0' of type CHAR\\(1\\)");
     tester.withConformance(SqlConformanceEnum.PRAGMATIC_2003).checkQueryFails(
-    "insert into empnullables(extra BOOLEAN) (empno, ename, ^extra^) values (5, 'bob', 'true')",
+        "insert into empnullables(extra BOOLEAN)"
+            + " (empno, ename, ^extra^) values (5, 'bob', 'true')",
         "Cannot assign to target field 'EXTRA' of type BOOLEAN"
             + " from source field 'EXPR\\$2' of type CHAR\\(4\\)");
   }
@@ -9525,15 +9526,21 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
   }
 
   @Test public void testInsertExtendedColumnFailCollision() {
-    tester.checkQueryFails("insert into EMPDEFAULTS(^comm^ BOOLEAN) (empno, ename, job, comm)\n"
+    tester.checkQueryFails("insert into EMPDEFAULTS(^comm^ BOOLEAN)"
+            + " (empno, ename, job, comm)\n"
             + "values (1, 'Arthur', 'clown', true)",
-        "Cannot assign to target field 'COMM' of type INTEGER from source field 'COMM' of type BOOLEAN");
-    tester.checkQueryFails("insert into EMPDEFAULTS(\"comm\" BOOLEAN) (empno, ename, job, ^comm^)\n"
+        "Cannot assign to target field 'COMM' of type INTEGER"
+            + " from source field 'COMM' of type BOOLEAN");
+    tester.checkQueryFails("insert into EMPDEFAULTS(\"comm\" BOOLEAN)"
+            + " (empno, ename, job, ^comm^)\n"
             + "values (1, 'Arthur', 'clown', true)",
-        "Cannot assign to target field 'COMM' of type INTEGER from source field 'EXPR\\$3' of type BOOLEAN");
-    tester.checkQueryFails("insert into EMPDEFAULTS(\"comm\" BOOLEAN) (empno, ename, job, ^\"comm\"^)\n"
+        "Cannot assign to target field 'COMM' of type INTEGER"
+            + " from source field 'EXPR\\$3' of type BOOLEAN");
+    tester.checkQueryFails("insert into EMPDEFAULTS(\"comm\" BOOLEAN)"
+            + " (empno, ename, job, ^\"comm\"^)\n"
             + "values (1, 'Arthur', 'clown', 1)",
-        "Cannot assign to target field 'comm' of type BOOLEAN from source field 'EXPR\\$3' of type INTEGER");
+        "Cannot assign to target field 'comm' of type BOOLEAN"
+            + " from source field 'EXPR\\$3' of type INTEGER");
   }
 
   @Test public void testInsertExtendedColumnModifiableViewFailCollision() {

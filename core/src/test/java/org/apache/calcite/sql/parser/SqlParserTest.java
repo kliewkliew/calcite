@@ -3214,9 +3214,13 @@ public class SqlParserTest {
   }
 
   @Test public void testUpdateExtendedColumnList() {
-    final String expected = "UPDATE `EMPDEFAULTS` EXTEND (`EXTRA` BOOLEAN, `NOTE` VARCHAR) SET `DEPTNO` = 1\n"
-        + ", `EXTRA` = TRUE\n" + ", `EMPNO` = 20\n" + ", `ENAME` = 'Bob'\n"
-        + ", `NOTE` = 'legion'\n" + "WHERE (`DEPTNO` = 10)";
+    final String expected = "UPDATE `EMPDEFAULTS` EXTEND (`EXTRA` BOOLEAN, `NOTE` VARCHAR)"
+        + " SET `DEPTNO` = 1\n"
+        + ", `EXTRA` = TRUE\n"
+        + ", `EMPNO` = 20\n"
+        + ", `ENAME` = 'Bob'\n"
+        + ", `NOTE` = 'legion'\n"
+        + "WHERE (`DEPTNO` = 10)";
     sql("update empdefaults(extra BOOLEAN, note VARCHAR)"
         + " set deptno = 1, extra = true, empno = 20, ename = 'Bob', note = 'legion'"
         + " where deptno = 10")
@@ -3225,9 +3229,13 @@ public class SqlParserTest {
 
 
   @Test public void testUpdateCaseSensitiveExtendedColumnList() {
-    final String expected = "UPDATE `EMPDEFAULTS` EXTEND (`extra` BOOLEAN, `NOTE` VARCHAR) SET `DEPTNO` = 1\n"
-        + ", `extra` = TRUE\n" + ", `EMPNO` = 20\n" + ", `ENAME` = 'Bob'\n"
-        + ", `NOTE` = 'legion'\n" + "WHERE (`DEPTNO` = 10)";
+    final String expected = "UPDATE `EMPDEFAULTS` EXTEND (`extra` BOOLEAN, `NOTE` VARCHAR)"
+        + " SET `DEPTNO` = 1\n"
+        + ", `extra` = TRUE\n"
+        + ", `EMPNO` = 20\n"
+        + ", `ENAME` = 'Bob'\n"
+        + ", `NOTE` = 'legion'\n"
+        + "WHERE (`DEPTNO` = 10)";
     sql("update empdefaults(\"extra\" BOOLEAN, note VARCHAR)"
         + " set deptno = 1, \"extra\" = true, empno = 20, ename = 'Bob', note = 'legion'"
         + " where deptno = 10")

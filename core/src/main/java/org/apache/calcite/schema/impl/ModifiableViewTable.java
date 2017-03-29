@@ -37,13 +37,10 @@ import org.apache.calcite.util.ImmutableIntList;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -101,27 +98,15 @@ public class ModifiableViewTable extends ViewTable
    * Extends the underlying table and returns a new view with updated row-type and column-mapping.
    */
   public final ModifiableViewTable extend(
-      List<RelDataTypeField> fields, RelDataTypeFactory typeFactory) {
+      List<RelDataTypeField> extendedColumns, RelDataTypeFactory typeFactory) {
     final ExtensibleTable underlying = unwrap(ExtensibleTable.class);
     assert underlying != null;
 
-    final RelDataType oldRowType = getRowType(typeFactory);
-    final Iterable<RelDataTypeField> allFields =
-        Iterables.unmodifiableIterable(Iterables.concat(oldRowType.getFieldList(), fields));
+    final List<RelDataTypeField> baseColumns = getRowType(typeFactory).getFieldList();
 
-    // Find the set of extended fields that do not duplicate a view column.
-    final HashSet<String> dedupedFieldNames =
-        Sets.newHashSetWithExpectedSize(oldRowType.getFieldCount() + fields.size());
-    final ImmutableList.Builder<RelDataTypeField> dedupedFieldsBuilder =
-        ImmutableList.builder();
-    for (RelDataTypeField field : allFields) {
-      if (!dedupedFieldNames.contains(field.getName())) {
-        dedupedFieldNames.add(field.getName());
-        dedupedFieldsBuilder.add(field);
-      }
-    }
-    final ImmutableList<RelDataTypeField> dedupedFields = dedupedFieldsBuilder.build();
-    final ImmutableList<RelDataTypeField> dedupedExtendedFields =
+    final List<RelDataTypeField> dedupedFields =
+        RelOptUtil.deduplicateColumns(baseColumns, extendedColumns);
+    final List<RelDataTypeField> dedupedExtendedFields =
         dedupedFields.subList(getColumnMapping().size(), dedupedFields.size());
 
     // The characteristics of the new view.
@@ -131,39 +116,22 @@ public class ModifiableViewTable extends ViewTable
 
     // Extend the underlying table with only the fields that
     // duplicate columns in neither the view nor the base table.
-    final List<RelDataTypeField> columnsForExtendingBaseTable =
-        getExtendedColumnsForBaseTable(underlying, dedupedExtendedFields, typeFactory);
-    final Table extendedTable = underlying.extend(columnsForExtendingBaseTable);
+    final List<RelDataTypeField> underlyingColumns =
+        underlying.getRowType(typeFactory).getFieldList();
+    final List<RelDataTypeField> columnsOfExtendedBaseTable =
+        RelOptUtil.deduplicateColumns(underlyingColumns, dedupedExtendedFields);
+    final List<RelDataTypeField> extendColumnsOfBaseTable =
+        columnsOfExtendedBaseTable.subList(underlyingColumns.size(), columnsOfExtendedBaseTable.size());
+    final Table extendedTable = underlying.extend(extendColumnsOfBaseTable);
 
     return extend(extendedTable, newRowType, newColumnMapping);
-  }
-
-  /**
-   * Get the set of extended columns that do not duplicate a column in the
-   * underlying table.
-   */
-  private static List<RelDataTypeField> getExtendedColumnsForBaseTable(
-      Table underlying, List<RelDataTypeField> extendedColumns,
-      RelDataTypeFactory typeFactory) {
-    final List<RelDataTypeField> baseColumns =
-        underlying.getRowType(typeFactory).getFieldList();
-    final Map<String, Integer> nameToIndex = mapNameToIndex(baseColumns);
-
-    final ImmutableList.Builder<RelDataTypeField> outputCols =
-        ImmutableList.builder();
-    for (RelDataTypeField extendedColumn : extendedColumns) {
-      if (!nameToIndex.containsKey(extendedColumn.getName())) {
-        outputCols.add(extendedColumn);
-      }
-    }
-    return outputCols.build();
   }
 
   /**
    * Creates a mapping from the view index to the index in the underlying table.
    */
   private static ImmutableIntList getNewColumnMapping(Table underlying,
-      ImmutableIntList oldColumnMapping, ImmutableList<RelDataTypeField> extendedColumns,
+      ImmutableIntList oldColumnMapping, List<RelDataTypeField> extendedColumns,
       RelDataTypeFactory typeFactory) {
     final List<RelDataTypeField> baseColumns =
         underlying.getRowType(typeFactory).getFieldList();
